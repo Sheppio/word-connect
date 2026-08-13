@@ -18,6 +18,12 @@ const HINT_REFILL_MS = 5 * 60 * 1000;
 const SHUFFLE_COOLDOWN_MS = 5000;
 const STORE_KEY = 'word-connect-save-v1';
 
+/* Every solve is logged against its seed. Nothing reads it yet — it's the
+   record a stats or streaks screen would be built from. Oldest entries fall
+   off the end so it can't grow without limit. */
+const HISTORY_KEY = 'word-connect-history-v1';
+const HISTORY_MAX = 500;
+
 /* ---------- palette ----------
 
    Six hues at a fixed *perceptual* lightness. HSL won't do this: hsl(50 74% 61%)
@@ -844,6 +850,32 @@ function save() {
   } catch (e) { /* private mode — play on without saving */ }
 }
 
+/* The full solve log, oldest first. */
+function loadHistory() {
+  try {
+    const all = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(all) ? all : [];
+  } catch (e) { return []; }
+}
+
+function recordSolve() {
+  const entry = {
+    seed: seedFor(state.day, state.level),
+    day: state.day,
+    puzzle: state.level,
+    solvedAt: Date.now(),
+    seconds: state.elapsed,
+    moves: state.moves,
+    hints: state.hintsUsed
+  };
+  try {
+    const all = loadHistory();
+    all.push(entry);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(all.slice(-HISTORY_MAX)));
+  } catch (e) { /* storage blocked or full — losing the log mustn't stop play */ }
+  return entry;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -885,6 +917,7 @@ function closeSheet() { overlayEl.hidden = true; }
 function finish() {
   state.done = true;
   refreshHud();
+  recordSolve();
   save();
   vibrate([20, 60, 30]);
   announce('All six groups complete!');
@@ -914,7 +947,7 @@ function showWinSheet() {
   if (!state.done) return;
   const found = state.groups.map(g =>
     `<li><span class="chip" style="background:${g.cardColor}"></span>${g.title}</li>`).join('');
-  openSheet('Puzzle solved! 🎉', `
+  openSheet(`Puzzle #${state.level} solved! 🎉`, `
     <div class="result-grid">
       <div><strong>${formatTime(state.elapsed)}</strong>time</div>
       <div><strong>${state.moves}</strong>moves</div>

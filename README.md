@@ -27,6 +27,21 @@ directly. No build step, no dependencies, no server needed.
 
 Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 
+## The solve log
+
+Every completed puzzle is appended to `word-connect-history-v1` in
+`localStorage`, keyed by its seed:
+
+```json
+{ "seed": "20260813-2", "day": "20260813", "puzzle": 2,
+  "solvedAt": 1786627045116, "seconds": 95, "moves": 8, "hints": 0 }
+```
+
+Nothing in the game reads it yet — it's the record a stats, streaks or
+personal-best screen would be built from. `loadHistory()` returns it, oldest
+first, and the last 500 entries are kept. Solving the same puzzle twice appends
+a second entry rather than replacing the first, so attempts stay distinguishable.
+
 ## Puzzles
 
 **Everyone gets the same puzzles in the same order each day, as many as they
