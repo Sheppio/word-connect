@@ -89,29 +89,42 @@ function longestToken(word) {
   return word.split(' ').reduce((n, part) => Math.max(n, part.length), 0);
 }
 
-/* ---------- which puzzle is today's ----------
+/* ---------- puzzle seeds ----------
 
-   The board has always been a pure function of the puzzle number, so a given
-   number deals the same cards on every device. Numbering by date makes that
-   useful: everyone playing on the same day works the same puzzle and can
-   compare times.
+   A puzzle is identified by "<local date>-<number that day>": 20260813-1 is the
+   first puzzle of 13 August, 20260813-45 the forty-fifth. The board is a pure
+   function of that string, so the same seed deals the same cards on any device,
+   and there's no limit on how many puzzles a day holds. Players only ever see
+   the number — Puzzle 1, Puzzle 2 — since the date is implied by playing today.
 
-   Counted from the local calendar date, so a player's day turns over at their
-   own midnight. Both ends go through Date.UTC on the Y/M/D, which keeps the
-   arithmetic clear of daylight saving. */
-const PUZZLE_EPOCH = Date.UTC(2026, 0, 1);   // puzzle #1
+   The date comes from the device's own calendar day, so it turns over at the
+   player's midnight rather than UTC's. */
 
-function puzzleNumberOn(date) {
-  const day = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-  return Math.max(1, Math.round((day - PUZZLE_EPOCH) / 86400000) + 1);
+function localDay(date) {
+  const d = date || new Date();
+  return String(d.getFullYear()) +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    String(d.getDate()).padStart(2, '0');
 }
 
-function todaysPuzzle() { return puzzleNumberOn(new Date()); }
+function dayLabel(day) {
+  const d = new Date(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8));
+  return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+}
 
-function puzzleDateLabel(n) {
-  const d = new Date(PUZZLE_EPOCH + (n - 1) * 86400000);
-  return d.toLocaleDateString(undefined,
-    { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+function seedFor(day, index) { return `${day}-${index}`; }
+
+/* Stable string hash (xmur3) — same result on every engine, which is the whole
+   point of seeding a shared puzzle from text. */
+function hashSeed(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  h = Math.imul(h ^ (h >>> 16), 2246822507);
+  h = Math.imul(h ^ (h >>> 13), 3266489909);
+  return (h ^= h >>> 16) >>> 0;
 }
 
 /* ---------- deterministic randomness ---------- */
@@ -150,8 +163,8 @@ function exclusiveWords(catIdx, idxs) {
 
 /* Six categories that can each still field four unambiguous words, then four
    words from each, then the lot shuffled across the board. */
-function buildPuzzle(level) {
-  const rnd = mulberry32(level * 2654435761 + 12345);
+function buildPuzzle(day, index) {
+  const rnd = mulberry32(hashSeed(seedFor(day, index)));
   const order = shuffled(CATEGORIES.map((_, i) => i), rnd);
 
   const picked = [];
@@ -194,7 +207,9 @@ function hasCompleteRow(board) {
 /* ---------- game state ---------- */
 
 const state = {
-  level: 1,
+  day: localDay(),     // YYYYMMDD the current puzzle belongs to
+  level: 1,            // which puzzle of that day
+
   groups: [],
   board: [],          // 24 cards: { word, group }
   locked: [],         // per row: group index, or -1
@@ -225,8 +240,22 @@ function announce(msg) { liveEl.textContent = msg; }
 
 /* ---------- setup ---------- */
 
-function startLevel(level, restore) {
-  const puzzle = buildPuzzle(level);
+/* Puzzle `index` of `day`. startLevel() is the shorthand for another puzzle on
+   the day already in play. */
+function startLevel(index, restore) {
+  startPuzzle(state.day || localDay(), index, restore);
+}
+
+/* The next puzzle is the next one today — if midnight has passed mid-session,
+   that means the new day's first. */
+function nextPuzzle() {
+  const today = localDay();
+  if (state.day !== today) startPuzzle(today, 1);
+  else startLevel(state.level + 1);
+}
+
+function startPuzzle(day, level, restore) {
+  const puzzle = buildPuzzle(day, level);
 
   /* A save from an older word list can't be trusted — start the level clean. */
   if (restore) {
@@ -236,6 +265,7 @@ function startLevel(level, restore) {
     if (!ok) restore = null;
   }
 
+  state.day = day;
   state.level = level;
   state.groups = puzzle.groups;
   state.board = restore ? restore.board.map(c => ({ word: c.word, group: c.group })) : puzzle.board;
@@ -759,8 +789,8 @@ function tick() {
 function save() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
+      day: state.day,
       level: state.level,
-      savedDay: todaysPuzzle(),
       board: state.board,
       locked: state.locked,
       moves: state.moves,
@@ -846,7 +876,7 @@ function showWinSheet() {
     </div>
     <ul class="solved-list">${found}</ul>`, [
     { label: 'Share result', primary: true, keepOpen: true, onClick: shareResult },
-    { label: 'Next puzzle', onClick: () => startLevel(state.level + 1) },
+    { label: 'Next puzzle', onClick: nextPuzzle },
     { label: 'Play this one again', onClick: () => startLevel(state.level) }
   ]);
 }
@@ -856,7 +886,9 @@ function showWinSheet() {
 async function shareResult(btn) {
   const hints = `${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}`;
   const url = (location.origin + location.pathname).replace(/index\.html$/, '');
-  const text = `Word Connect #${state.level}\n` +
+  const when = new Date(+state.day.slice(0, 4), +state.day.slice(4, 6) - 1, +state.day.slice(6, 8))
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const text = `Word Connect · ${when} · Puzzle ${state.level}\n` +
     `${formatTime(state.elapsed)} · ${state.moves} moves · ${hints}\n${url}`;
 
   const say = msg => {
@@ -877,18 +909,17 @@ async function shareResult(btn) {
 }
 
 function showHelp() {
-  const today = todaysPuzzle();
   const actions = [{ label: 'Got it', primary: true }];
-  if (state.level !== today) {
-    actions.push({ label: `Today's puzzle (#${today})`, onClick: () => startLevel(today) });
+  if (state.day !== localDay()) {
+    actions.push({ label: "Today's first puzzle", onClick: () => startPuzzle(localDay(), 1) });
   }
   actions.push(
     { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },
-    { label: 'Next puzzle', onClick: () => startLevel(state.level + 1) }
+    { label: 'Next puzzle', onClick: nextPuzzle }
   );
 
   openSheet('How to play', `
-    <p class="sheet-sub">Puzzle #${state.level} · ${puzzleDateLabel(state.level)}</p>
+    <p class="sheet-sub">Puzzle ${state.level} · ${dayLabel(state.day)}</p>
     <ul>
       <li>Every row should end up holding four related words.</li>
       <li>Drag a card onto another to swap the two.</li>
@@ -897,8 +928,8 @@ function showHelp() {
       <li>Clear all six rows to finish the puzzle.</li>
       <li>A hint fills in a row. You get one back every five minutes, up to
           three — the button counts down to the next.</li>
-      <li>There's a new puzzle each day, and it's the same one for everyone —
-          so times are worth comparing.</li>
+      <li>Play as many as you like. Everyone gets the same puzzles in the same
+          order each day, so times are worth comparing.</li>
     </ul>`, actions, true);
 }
 
@@ -930,20 +961,19 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('touchmove', e => { if (drag && drag.moved) e.preventDefault(); },
   { passive: false });
 
-/* A save from an earlier day is stale news: the daily has moved on, so open
-   today's puzzle. Within the same day the save is honoured, including a puzzle
-   the player browsed to from the menu. */
+/* Yesterday's part-finished board is stale news — a new day starts at its own
+   first puzzle. Within the same day the save is honoured, whichever puzzle of
+   that day was in play. */
 const saved = load();
-const sameDay = saved && saved.savedDay === todaysPuzzle();
-if (sameDay) {
-  startLevel(saved.level, saved);
+if (saved && saved.day === localDay()) {
+  startPuzzle(saved.day, saved.level, saved);
 } else {
-  /* carry the hint stock over even though the puzzle doesn't */
+  /* the hint stock refills on real time, so it isn't the day's to reset */
   if (saved) {
     state.hints = Math.min(HINT_MAX, Math.max(0, saved.hints | 0));
     state.nextHintAt = saved.nextHintAt || 0;
   }
-  startLevel(todaysPuzzle());
+  startPuzzle(localDay(), 1);
 }
 if (!saved) showHelp();
 timerId = setInterval(tick, 1000);

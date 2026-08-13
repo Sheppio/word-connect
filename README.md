@@ -28,15 +28,18 @@ Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 
 ## Puzzles
 
-**There's one puzzle a day, and it's the same board for everyone.** The board
-has always been a pure function of the puzzle number — no device state, no
-clock, no stored randomness — so numbering by date is what makes times worth
-comparing. Puzzle #1 is 1 January 2026; today's number is the days since, taken
-from the player's local calendar date so the day turns over at their own
-midnight. The win sheet offers the result to the share sheet (or the clipboard),
-puzzle number included, so a friend can look up the same board.
+**Everyone gets the same puzzles in the same order each day, as many as they
+want.** A puzzle is identified by a seed of `<local date>-<number that day>` —
+`20260813-1` is the first puzzle of 13 August, `20260813-45` the forty-fifth.
+The board is a pure function of that string (hashed with xmur3, dealt with
+mulberry32): no device state, no clock, no stored randomness, so the same seed
+deals the same cards anywhere. Players only ever see the number — Puzzle 1,
+Puzzle 2 — since the date is implied by playing today.
 
-The menu walks to any other puzzle — previous, next, or back to today's.
+The date is the device's own calendar day, so it turns over at the player's
+midnight rather than UTC's. The win sheet offers the result to the share sheet
+(or the clipboard) naming the date and puzzle number, so a friend can find the
+same board. The menu walks to any other puzzle of the day.
 
 `data.js` holds 70 categories and about a thousand words. Each category lists
 far more members than a row can hold — twelve months, seven days, dozens of
