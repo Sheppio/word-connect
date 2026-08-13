@@ -4,7 +4,8 @@ A phone-first word grouping game. Six rows, four columns, twenty-four shuffled
 cards. Drag related words together until each row holds one complete group — a
 finished row locks itself and reveals the group's name.
 
-**Play it:** open `index.html`. No build step, no dependencies, no server needed.
+**Play it:** <https://sheppio.github.io/word-connect/> — or open `index.html`
+directly. No build step, no dependencies, no server needed.
 
 ## How it plays
 
@@ -49,7 +50,10 @@ four cards still have to share the width of a phone.
 | `data.js` | The word-set pool |
 | `style.css` | Layout and theme, sized to fit one screen without scrolling |
 
-## Hosting
+## Deploying
 
-Any static host works. For GitHub Pages: Settings → Pages → deploy from the
-branch root.
+`.github/workflows/pages.yml` publishes the repository root to GitHub Pages on
+every push to `main` (Settings → Pages → Source: GitHub Actions). The
+`github-pages` environment only accepts deployments from `main`, so work merged
+or pushed there goes live a minute later. Any other static host works too — the
+files are served as-is.

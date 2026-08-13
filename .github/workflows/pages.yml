@@ -1,10 +1,10 @@
 name: Deploy to GitHub Pages
 
+# `main` is the published branch: the github-pages environment only accepts
+# deployments from it. Merge or push work there to release it.
 on:
   push:
-    branches:
-      - main
-      - claude/word-grouping-game-taexak
+    branches: [main]
   workflow_dispatch:
 
 permissions:
