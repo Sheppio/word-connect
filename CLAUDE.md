@@ -32,6 +32,8 @@ Every card on a board shares one type size, so the longest word sets the size
 for all twenty-four. Words over `MAX_WORD_LEN` are never dealt — raise that
 constant only after checking what it does to the type size at 375px.
 
-Colours belong to the palette in `ROW_COLORS`: six hues at one saturation and
-lightness. Adding a colour means adding a hue, not a hand-picked hex. Text on
-those colours must clear WCAG AA (4.5:1); `test-polish.mjs` measures it.
+Row colours come from `ROW_HUES` in OKLCH, at one perceptual lightness with
+chroma set as a fraction of each hue's maximum. Add a hue, never a hand-picked
+hex — HSL lightness is not perceptual, and matching it across hues is what made
+the purple and red rows unreadable. Dark text on every row colour must clear
+WCAG AAA (7:1); `test-polish.mjs` measures it from the live CSS.

@@ -9,12 +9,70 @@ const SLOTS = ROWS * COLS;
 const HINTS_PER_PUZZLE = 3;
 const STORE_KEY = 'word-connect-save-v1';
 
-/* Six hues at a fixed saturation and lightness, so the set reads as one
-   palette: [band behind the row, face of the locked cards]. */
-const ROW_HUES = [32, 50, 142, 205, 276, 348];
+/* ---------- palette ----------
+
+   Six hues at a fixed *perceptual* lightness. HSL won't do this: hsl(50 74% 61%)
+   and hsl(276 74% 61%) claim the same lightness but the yellow is far brighter
+   than the purple, so dark text on it varies from comfortable to unreadable.
+   These are specified in OKLCH, where L really is perceived lightness, and
+   converted to sRGB here so no CSS colour-space support is needed.
+
+   Chroma is set as a fraction of what each hue can actually reach at that
+   lightness, not as one number for all six: sRGB affords yellow far more
+   chroma than purple, and a fixed value leaves the yellow looking like olive. */
+
+const CARD_L = 0.80, CARD_VIVID = 0.92;   // face of a locked card
+const BAND_L = 0.89, BAND_VIVID = 0.70;   // band behind the row
+const ROW_HUES = [65, 100, 148, 245, 305, 20];  // orange, yellow, green, blue, purple, red
+
+function oklchToRgb(L, C, hDeg) {
+  const h = hDeg * Math.PI / 180;
+  const a = C * Math.cos(h), b = C * Math.sin(h);
+
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+
+  const lin = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+  ];
+  const gamma = v => v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  return lin.map(v => Math.round(Math.min(1, Math.max(0, gamma(v))) * 255));
+}
+
+/* True when the colour fits inside sRGB without any channel being clipped. */
+function inGamut(L, C, hDeg) {
+  const h = hDeg * Math.PI / 180;
+  const a = C * Math.cos(h), b = C * Math.sin(h);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+  ].every(v => v >= -0.0001 && v <= 1.0001);
+}
+
+/* The most chroma this hue can hold at this lightness without sRGB clipping —
+   clipping would drag the lightness with it, which is the thing we're fixing. */
+function maxChroma(L, h) {
+  let c = 0.4;
+  while (c > 0 && !inGamut(L, c, h)) c -= 0.002;
+  return Math.max(c, 0);
+}
+
+function oklch(L, vivid, h) {
+  const [r, g, b] = oklchToRgb(L, maxChroma(L, h) * vivid, h);
+  return `rgb(${r} ${g} ${b})`;
+}
+
+/* [band behind the row, face of the locked cards] */
 const ROW_COLORS = ROW_HUES.map(h => [
-  `hsl(${h} 82% 73%)`,
-  `hsl(${h} 74% 61%)`
+  oklch(BAND_L, BAND_VIVID, h),
+  oklch(CARD_L, CARD_VIVID, h)
 ]);
 
 /* Longest word we will deal. Every card on a board shares one type size, so a
