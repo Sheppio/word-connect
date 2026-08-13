@@ -113,6 +113,7 @@ const overlayEl = document.getElementById('overlay');
 const sheetTitle = document.getElementById('sheet-title');
 const sheetBody = document.getElementById('sheet-body');
 const sheetActions = document.getElementById('sheet-actions');
+const sheetVersion = document.getElementById('sheet-version');
 
 function announce(msg) { liveEl.textContent = msg; }
 
@@ -556,10 +557,12 @@ function load() {
 
 /* ---------- overlays ---------- */
 
-function openSheet(title, bodyHtml, actions) {
+function openSheet(title, bodyHtml, actions, showVersion) {
   sheetTitle.textContent = title;
   sheetBody.innerHTML = bodyHtml;
   sheetActions.textContent = '';
+  sheetVersion.textContent = `v${APP_VERSION} · ${APP_BUILD}`;
+  sheetVersion.hidden = !showVersion;
   actions.forEach(a => {
     const b = document.createElement('button');
     b.className = 'btn' + (a.primary ? ' primary' : '');
@@ -621,12 +624,11 @@ function showHelp() {
       <li>Prefer tapping? Tap one card, then tap the card to swap it with.</li>
       <li>Complete a row and it locks, revealing the group name.</li>
       <li>Clear all six rows to finish the puzzle.</li>
-    </ul>
-    <p class="version">v${APP_VERSION} &middot; ${APP_BUILD}</p>`, [
+    </ul>`, [
     { label: 'Got it', primary: true },
     { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },
     { label: 'Skip to next puzzle', onClick: () => startLevel(state.level + 1) }
-  ]);
+  ], true);
 }
 
 /* ---------- wiring ---------- */
