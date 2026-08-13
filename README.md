@@ -24,23 +24,31 @@ Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 
 ## Puzzles
 
-Puzzle numbers are deterministic: puzzle 12 deals the same six groups in the same
-opening arrangement on any device, so it can be shared or replayed. Each puzzle
-draws six word sets from the pool in `data.js`, skipping any set that would put a
-duplicate word on the board (`RUBY` is both a gemstone and a coding language, so
-those two never appear together).
+Puzzle numbers are deterministic: puzzle 12 deals the same board on any device,
+so it can be shared or replayed.
 
-The pool holds 70+ sets — days of the week, months, countries, capitals, star
-signs, planets, dogs, big cats, luxury cars, retro games, boxing, pasta,
-gemstones, Greek gods and so on. To add more, append to `CATEGORIES` in
-`data.js`:
+`data.js` holds 70 categories and about a thousand words. Each category lists
+far more members than a row can hold — twelve months, seven days, dozens of
+countries — and a puzzle takes **four at random** from each of six categories,
+so the same category plays differently every time it appears.
+
+Words that honestly belong to two categories are listed under **both**:
+`ORANGE` is a fruit and a colour, `PYTHON` a snake and a language, `TURKEY` a
+country and a bird, `JAGUAR` a cat and a car. `buildPuzzle()` only deals a word
+that is unique among the six categories on that board, so a card can never
+belong to two rows at once. Listing an overlap is therefore how you *prevent*
+ambiguity, not how you cause it — if you add a word that could sit in another
+category, add it there too.
+
+To add material, extend a pool or append a category:
 
 ```js
-{ title: 'Sea Creatures', words: ['DOLPHIN', 'OCTOPUS', 'SHARK', 'CRAB'] }
+{ title: 'Sea Creatures', words: ['DOLPHIN', 'OCTOPUS', 'SHARK', 'CRAB', 'WHALE'] }
 ```
 
-Exactly four words per set, and keep them short — long words shrink to fit, but
-four cards still have to share the width of a phone.
+At least four words per category, and keep them to about ten characters — long
+words shrink to fit, but four cards still share the width of a phone. Two short
+words with a space between them (`HOT DOG`) wrap and are fine.
 
 ## Files
 

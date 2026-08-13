@@ -42,19 +42,28 @@ function shuffled(arr, rnd) {
 
 /* ---------- puzzle construction ---------- */
 
-/* Pick six categories that share no words, then deal them out shuffled. */
+/* Words of `catIdx` that no other category in `idxs` also claims. A word listed
+   under two categories is ambiguous, so it can only be dealt when its rival
+   isn't on the board. */
+function exclusiveWords(catIdx, idxs) {
+  const rivals = new Set();
+  idxs.forEach(other => {
+    if (other !== catIdx) CATEGORIES[other].words.forEach(w => rivals.add(w));
+  });
+  return CATEGORIES[catIdx].words.filter(w => !rivals.has(w));
+}
+
+/* Six categories that can each still field four unambiguous words, then four
+   words from each, then the lot shuffled across the board. */
 function buildPuzzle(level) {
   const rnd = mulberry32(level * 2654435761 + 12345);
   const order = shuffled(CATEGORIES.map((_, i) => i), rnd);
 
   const picked = [];
-  const used = new Set();
   for (const idx of order) {
     if (picked.length === ROWS) break;
-    const words = CATEGORIES[idx].words;
-    if (words.some(w => used.has(w))) continue;
-    words.forEach(w => used.add(w));
-    picked.push(idx);
+    const trial = picked.concat(idx);
+    if (trial.every(c => exclusiveWords(c, trial).length >= COLS)) picked.push(idx);
   }
 
   const groups = picked.map((catIdx, g) => ({
@@ -62,7 +71,7 @@ function buildPuzzle(level) {
     title: CATEGORIES[catIdx].title,
     color: ROW_COLORS[g % ROW_COLORS.length][0],
     cardColor: ROW_COLORS[g % ROW_COLORS.length][1],
-    words: CATEGORIES[catIdx].words
+    words: shuffled(exclusiveWords(catIdx, picked), rnd).slice(0, COLS)
   }));
 
   const cards = [];
