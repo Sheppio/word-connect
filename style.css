@@ -480,10 +480,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 
 .sheet {
   width: 100%;
-  /* a long sheet scrolls inside itself rather than off a short screen */
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 22px 20px 18px;
   border-radius: 20px;
   background: linear-gradient(180deg, #2a3aa8, #182562);
@@ -493,6 +490,14 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   animation: rise .28s cubic-bezier(.2, 1.2, .4, 1);
 }
 @keyframes rise { from { transform: translateY(14px) scale(.96); opacity: 0; } }
+
+/* Only a sheet too tall for the screen becomes a scroller. A scroll container
+   is composited, and text on a composited layer is rasterised differently —
+   so the sheets that don't need one don't pay for it. */
+.sheet.scrollable {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 
 .sheet h2 { margin: 0 0 10px; font-size: 21px; }
 .sheet-sub {

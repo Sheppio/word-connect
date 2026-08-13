@@ -987,6 +987,11 @@ function openSheet(title, bodyHtml, actions, showVersion) {
   /* the board and toolbar are behind a dialog — take them out of reach so a
      stray tap or a screen reader can't land on the buttons underneath */
   appEl.inert = true;
+
+  /* scroll only when the content really doesn't fit (see .sheet.scrollable) */
+  const sheet = overlayEl.querySelector('.sheet');
+  sheet.classList.remove('scrollable');
+  if (sheet.scrollHeight > sheet.clientHeight + 1) sheet.classList.add('scrollable');
 }
 
 function closeSheet() {
