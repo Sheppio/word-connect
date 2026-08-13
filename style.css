@@ -64,12 +64,36 @@ body::before {
 }
 
 /* ---------- top bar ---------- */
+/* Three groups: puzzle on the left, clock in the middle, streak on the right.
+   The sides share the leftover width equally, which centres the middle group
+   on the bar rather than merely between its neighbours. */
 .topbar {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 2px 8px;
   flex: none;
+}
+
+.bar-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 0;   /* no min-width:0 — a side must never shrink under its
+                    content, which would slide the chips under the clock */
+}
+.bar-right { justify-content: flex-end; }
+
+/* Centring holds only while each side fits its half of the leftover width, so
+   the labels give way before the clock does: the chip goes to "#1" until
+   there's room for the word, and on the narrowest screens "moves" drops too.
+   Both are spelled out on the How to play sheet and the scorecard. */
+@media (max-width: 439px) {
+  .level-chip-label { display: none; }
+  #level-num::before { content: '#'; opacity: .5; margin-right: 1px; }
+}
+@media (max-width: 359px) {
+  .stats .wordy { display: none; }
 }
 
 .icon-btn {
@@ -135,7 +159,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 
 .stats {
-  margin-left: auto;
+  flex: none;
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
