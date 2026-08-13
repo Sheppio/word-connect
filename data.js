@@ -139,7 +139,7 @@ const CATEGORIES = [
     'DOUGHNUT', 'PARFAIT'] },
 
   { title: 'Drinks', words: [
-    'COFFEE', 'COCOA', 'JUICE', 'SODA', 'TEA', 'LEMONADE', 'MILKSHAKE',
+    'COFFEE', 'JUICE', 'SODA', 'TEA', 'LEMONADE', 'MILKSHAKE',
     'CIDER', 'SMOOTHIE', 'ESPRESSO', 'LATTE', 'COLA', 'WATER', 'SQUASH'] },
 
   { title: 'Cheeses', words: [
