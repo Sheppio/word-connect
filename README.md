@@ -74,7 +74,7 @@ midnight rather than UTC's. The win sheet offers the result to the share sheet
 (or the clipboard) naming the date and puzzle number, so a friend can find the
 same board. The menu walks to any other puzzle of the day.
 
-`data.js` holds 70 categories and about a thousand words. Each category lists
+`data.js` holds 71 categories and about a thousand words. Each category lists
 far more members than a row can hold — twelve months, seven days, dozens of
 countries — and a puzzle takes **four at random** from each of six categories,
 so the same category plays differently every time it appears.
@@ -86,6 +86,14 @@ that is unique among the six categories on that board, so a card can never
 belong to two rows at once. Listing an overlap is therefore how you *prevent*
 ambiguity, not how you cause it — if you add a word that could sit in another
 category, add it there too.
+
+That guard compares words. Two categories can also overlap in *meaning* without
+sharing one — every snake is also a reptile — so a category may name others in
+`conflicts` and the picker will never deal them onto the same board:
+
+```js
+{ title: 'Reptiles', words: [...], conflicts: ['Snakes'] }
+```
 
 To add material, extend a pool or append a category:
 

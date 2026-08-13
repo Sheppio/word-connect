@@ -5,5 +5,5 @@
    the deployed commit by .github/workflows/pages.yml, so it reads "dev"
    whenever the game is opened from a working copy rather than the live site. */
 
-const APP_VERSION = '0.11.3';
+const APP_VERSION = '0.12.0';
 const APP_BUILD = 'dev';

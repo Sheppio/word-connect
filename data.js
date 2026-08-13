@@ -8,6 +8,10 @@
    word that is unique among the six categories on the board, so listing the
    overlap is what stops an ambiguous card reaching the player.
 
+   That guard works on identical words. Where two categories overlap in meaning
+   without sharing a word — every snake is also a reptile — name the other in
+   `conflicts` and the two will never be dealt onto the same board.
+
    Keep words to about ten characters — four cards share the width of a phone.
    Two short words with a space between them wrap and are fine. */
 
@@ -67,9 +71,14 @@ const CATEGORIES = [
     'TERMITE', 'APHID', 'MANTIS', 'HORNET', 'LADYBIRD', 'WEEVIL', 'EARWIG'] },
 
   { title: 'Reptiles', words: [
-    'GECKO', 'COBRA', 'TURTLE', 'IGUANA', 'PYTHON', 'VIPER', 'CROCODILE',
-    'ALLIGATOR', 'CHAMELEON', 'TORTOISE', 'LIZARD', 'ADDER', 'SKINK', 'MAMBA',
-    'BOA', 'TERRAPIN'] },
+    'GECKO', 'TURTLE', 'IGUANA', 'CROCODILE', 'ALLIGATOR', 'CHAMELEON',
+    'TORTOISE', 'LIZARD', 'SKINK', 'TERRAPIN', 'SNAKE', 'MONITOR', 'CAIMAN',
+    'TUATARA'],
+    conflicts: ['Snakes'] },
+
+  { title: 'Snakes', words: [
+    'COBRA', 'PYTHON', 'VIPER', 'ADDER', 'MAMBA', 'BOA', 'RATTLER',
+    'ANACONDA', 'TAIPAN', 'KRAIT', 'ASP'] },
 
   { title: 'Vehicles', words: [
     'TRUCK', 'TRACTOR', 'SCOOTER', 'VAN', 'BUS', 'TAXI', 'LORRY', 'TRAM',

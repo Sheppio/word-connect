@@ -176,6 +176,15 @@ function exclusiveWords(catIdx, idxs) {
     w => !rivals.has(w) && longestToken(w) <= MAX_WORD_LEN);
 }
 
+/* Categories that overlap in meaning without sharing a word — a cobra belongs
+   under Snakes and equally under Reptiles — declare each other in `conflicts`
+   and never share a board. */
+function categoriesClash(a, b) {
+  const ca = CATEGORIES[a], cb = CATEGORIES[b];
+  return (ca.conflicts || []).includes(cb.title) ||
+         (cb.conflicts || []).includes(ca.title);
+}
+
 /* Six categories that can each still field four unambiguous words, then four
    words from each, then the lot shuffled across the board. */
 function buildPuzzle(day, index) {
@@ -185,6 +194,7 @@ function buildPuzzle(day, index) {
   const picked = [];
   for (const idx of order) {
     if (picked.length === ROWS) break;
+    if (picked.some(c => categoriesClash(c, idx))) continue;
     const trial = picked.concat(idx);
     if (trial.every(c => exclusiveWords(c, trial).length >= COLS)) picked.push(idx);
   }
