@@ -866,7 +866,11 @@ function openSheet(title, bodyHtml, actions, showVersion) {
   actions.forEach(a => {
     const b = document.createElement('button');
     b.className = 'btn' + (a.primary ? ' primary' : '');
-    b.textContent = a.label;
+    if (a.icon) b.insertAdjacentHTML('beforeend', a.icon);
+    const label = document.createElement('span');
+    label.className = 'btn-label';
+    label.textContent = a.label;
+    b.appendChild(label);
     b.addEventListener('click', () => {
       if (!a.keepOpen) closeSheet();
       a.onClick && a.onClick(b);
@@ -917,11 +921,17 @@ function showWinSheet() {
       <div><strong>${state.hintsUsed}</strong>hints</div>
     </div>
     <ul class="solved-list">${found}</ul>`, [
-    { label: 'Share result', primary: true, keepOpen: true, onClick: shareResult },
-    { label: 'Next puzzle', onClick: nextPuzzle },
-    { label: 'Play this one again', onClick: () => startLevel(state.level) }
+    { label: 'Next puzzle', primary: true, onClick: nextPuzzle },
+    { label: 'Share result', icon: SHARE_ICON, keepOpen: true, onClick: shareResult }
   ]);
 }
+
+/* One dot linked to two — kept on a single line so the button's accessible
+   name is just its label. */
+const SHARE_ICON = '<svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="m8.6 10.9 6.8-3.8M8.6 13.1l6.8 3.8"/>' +
+  '<circle cx="6" cy="12" r="2.7"/><circle cx="18" cy="6" r="2.7"/>' +
+  '<circle cx="18" cy="18" r="2.7"/></svg>';
 
 /* Hand the result to the share sheet where there is one, otherwise the
    clipboard. The puzzle number is the point: it identifies the exact board. */
@@ -934,10 +944,11 @@ async function shareResult(btn) {
     `${formatTime(state.elapsed)} · ${state.moves} moves · ${hints}\n${url}`;
 
   const say = msg => {
-    const was = btn.textContent;
-    btn.textContent = msg;
+    const el = btn.querySelector('.btn-label') || btn;
+    const was = el.textContent;
+    el.textContent = msg;
     announce(msg);
-    setTimeout(() => { btn.textContent = was; }, 1600);
+    setTimeout(() => { el.textContent = was; }, 1600);
   };
 
   try {
