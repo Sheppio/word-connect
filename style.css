@@ -537,16 +537,16 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .solved-list li {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   opacity: .92;
 }
 .solved-list .chip {
   flex: none;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 3px;
 }
 
@@ -557,11 +557,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   align-items: center;
   justify-content: center;
   gap: 9px;
-  padding: 12px 18px;
+  padding: 13px 18px;
   border-radius: 13px;
   border: none;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   cursor: pointer;
   background: rgba(255, 255, 255, .16);
