@@ -359,6 +359,7 @@ let drag = null;
 
 function onPointerDown(e) {
   if (e.button !== undefined && e.button > 0) return;
+  if (drag) return;  /* a second finger mustn't hijack the drag in progress */
   const el = e.currentTarget;
   const index = indexOfEl(el);
   if (index < 0 || isLockedIndex(index) || state.done) return;
