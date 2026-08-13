@@ -1073,13 +1073,6 @@ function showHelp() {
   if (state.day !== localDay()) {
     actions.push({ label: "Today's first puzzle", onClick: () => startPuzzle(localDay(), 1) });
   }
-  if (state.level > 1) {
-    actions.push({ label: 'Previous puzzle', onClick: () => startLevel(state.level - 1) });
-  }
-  /* forward only into a puzzle that's been unlocked by finishing this one */
-  if (state.day === localDay() && state.level < nextUnlocked()) {
-    actions.push({ label: 'Next puzzle', onClick: nextPuzzle });
-  }
 
   openSheet('How to play', `
     <p class="sheet-sub">Puzzle ${state.level} · ${dayLabel(state.day)}</p>
