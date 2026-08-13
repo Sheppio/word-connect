@@ -72,10 +72,16 @@ is pulled back.
 The date is the device's own calendar day, so it turns over at the player's
 midnight rather than UTC's. The menu walks to any other puzzle of the day.
 
-**Share result** hands the win sheet to the share sheet (or the clipboard) as
-plain text — date, puzzle number, the three stats, then the six groups behind
-emoji squares standing in for the row colours, since CSS can't follow the text
-into a messaging app:
+**Share result** hands over a **picture of the win sheet** — the same dialog
+minus its buttons, plus the date — drawn on a canvas by `share-card.js` and
+passed to the share sheet as a PNG. The measurements there mirror `.sheet`,
+`.result-grid` and `.solved-list` in `style.css`; change one and change the
+other, or the picture stops looking like the dialog it came from.
+
+The image travels with a line of text carrying the link, since a picture can't
+be clicked. Each step of the share degrades on its own — no canvas, no file
+sharing, or no clipboard images each falls back to the text alone rather than
+failing:
 
 ```
 Word Connect · Puzzle 10 · 13 Aug 2026
@@ -91,8 +97,8 @@ Word Connect · Puzzle 10 · 13 Aug 2026
 
 `ROW_EMOJI` sits beside `ROW_HUES` and has to be kept in step with it — row *n*
 takes entry *n*. Note that naming the groups gives away the answer to anyone
-who plays the same puzzle afterwards; drop the titles from `resultSummary()` if
-that ever matters more than showing off the board.
+who plays the same puzzle afterwards; drop the titles from `resultSummary()`
+and `resultImage()` if that ever matters more than showing off the board.
 
 `data.js` holds 71 categories and about a thousand words. Each category lists
 far more members than a row can hold — twelve months, seven days, dozens of
@@ -134,6 +140,7 @@ stay in the pool; they simply sit out. Spaces are free, since the card wraps:
 | `index.html` | Page shell: top bar, board, toolbar, dialog |
 | `app.js` | Game state, drag and drop, row locking, hints, saving |
 | `confetti.js` | Canvas particle burst for the win celebration |
+| `share-card.js` | Draws the win sheet as a PNG for sharing |
 | `version.js` | Version string; the build hash is stamped in at deploy time |
 | `data.js` | The word-set pool |
 | `style.css` | Layout and theme, sized to fit one screen without scrolling |

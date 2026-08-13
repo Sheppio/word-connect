@@ -1065,17 +1065,40 @@ const SHARE_ICON = '<svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"
    each behind the square that stands in for its row colour. */
 function resultSummary() {
   const hints = `${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}`;
-  const when = new Date(+state.day.slice(0, 4), +state.day.slice(4, 6) - 1, +state.day.slice(6, 8))
-    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
   const groups = state.groups
     .map((g, i) => `${ROW_EMOJI[i % ROW_EMOJI.length]} ${g.title}`).join('\n');
 
-  return `Word Connect · Puzzle ${state.level} · ${when}\n` +
+  return `Word Connect · Puzzle ${state.level} · ${resultDate()}\n` +
     `${formatTime(state.elapsed)} · ${state.moves} moves · ${hints}\n\n${groups}`;
 }
 
+function resultDate() {
+  return new Date(+state.day.slice(0, 4), +state.day.slice(4, 6) - 1, +state.day.slice(6, 8))
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/* The win sheet as a picture: the same dialog, minus the buttons, plus the
+   date. See share-card.js — this only supplies the words and the colours. */
+function resultImage() {
+  const canvas = renderResultCard({
+    title: `Puzzle #${state.level} solved! 🎉`,
+    date: resultDate(),
+    stats: [
+      { value: formatTime(state.elapsed), label: 'time' },
+      { value: String(state.moves), label: 'moves' },
+      { value: String(state.hintsUsed), label: 'hints' }
+    ],
+    groups: state.groups.map(g => ({ title: g.title, color: g.cardColor })),
+    footer: (location.host + location.pathname).replace(/\/(index\.html)?$/, '') || 'Word Connect'
+  });
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
 /* Hand the result to the share sheet where there is one, otherwise the
-   clipboard. The puzzle number is the point: it identifies the exact board. */
+   clipboard. The picture is the message; the text that rides along with it
+   carries the link, since an image can't. Every step degrades on its own:
+   no canvas, no file sharing or no clipboard images each falls back to the
+   text alone rather than failing the share. */
 async function shareResult(btn) {
   const url = (location.origin + location.pathname).replace(/index\.html$/, '');
   const text = `${resultSummary()}\n\n${url}`;
@@ -1088,8 +1111,33 @@ async function shareResult(btn) {
     setTimeout(() => { el.textContent = was; }, 1600);
   };
 
+  let file = null;
   try {
+    const blob = await resultImage();
+    if (blob) {
+      file = new File([blob], `word-connect-${state.day}-${state.level}.png`,
+        { type: 'image/png' });
+    }
+  } catch (err) { /* drawing failed — the text still says everything */ }
+
+  try {
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text });
+      return;
+    }
     if (navigator.share) { await navigator.share({ text }); return; }
+
+    if (file && window.ClipboardItem && navigator.clipboard.write) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({
+          'image/png': file,
+          'text/plain': new Blob([text], { type: 'text/plain' })
+        })]);
+        say('Copied!');
+        return;
+      } catch (err) { /* some browsers refuse multi-type writes */ }
+    }
+
     await navigator.clipboard.writeText(text);
     say('Copied!');
   } catch (err) {
