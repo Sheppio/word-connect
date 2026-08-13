@@ -70,9 +70,29 @@ drift. Earlier puzzles can be revisited freely; a save pointing at a locked one
 is pulled back.
 
 The date is the device's own calendar day, so it turns over at the player's
-midnight rather than UTC's. The win sheet offers the result to the share sheet
-(or the clipboard) naming the date and puzzle number, so a friend can find the
-same board. The menu walks to any other puzzle of the day.
+midnight rather than UTC's. The menu walks to any other puzzle of the day.
+
+**Share result** hands the win sheet to the share sheet (or the clipboard) as
+plain text — date, puzzle number, the three stats, then the six groups behind
+emoji squares standing in for the row colours, since CSS can't follow the text
+into a messaging app:
+
+```
+Word Connect · Puzzle 10 · 13 Aug 2026
+1:25 · 14 moves · 0 hints
+
+🟧 Pasta
+🟨 Retro Games
+🟩 Bathroom
+🟦 Aircraft
+🟪 Flowers
+🟥 Drinks
+```
+
+`ROW_EMOJI` sits beside `ROW_HUES` and has to be kept in step with it — row *n*
+takes entry *n*. Note that naming the groups gives away the answer to anyone
+who plays the same puzzle afterwards; drop the titles from `resultSummary()` if
+that ever matters more than showing off the board.
 
 `data.js` holds 71 categories and about a thousand words. Each category lists
 far more members than a row can hold — twelve months, seven days, dozens of

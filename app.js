@@ -45,6 +45,11 @@ const CARD_L = 0.80, CARD_VIVID = 0.92;   // face of a locked card
 const BAND_L = 0.89, BAND_VIVID = 0.70;   // band behind the row
 const ROW_HUES = [65, 100, 148, 245, 305, 20];  // orange, yellow, green, blue, purple, red
 
+/* The same six, as the nearest emoji square — a shared result has to survive
+   being pasted into a message, where CSS colours can't follow it. Keep this
+   in step with ROW_HUES: row n takes entry n. */
+const ROW_EMOJI = ['🟧', '🟨', '🟩', '🟦', '🟪', '🟥'];
+
 function oklchToRgb(L, C, hDeg) {
   const h = hDeg * Math.PI / 180;
   const a = C * Math.cos(h), b = C * Math.sin(h);
@@ -1055,15 +1060,25 @@ const SHARE_ICON = '<svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"
   '<circle cx="6" cy="12" r="2.7"/><circle cx="18" cy="6" r="2.7"/>' +
   '<circle cx="18" cy="18" r="2.7"/></svg>';
 
+/* The win sheet as plain text: date and puzzle number to identify the board,
+   the same three stats, then the six groups in the order the sheet lists them,
+   each behind the square that stands in for its row colour. */
+function resultSummary() {
+  const hints = `${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}`;
+  const when = new Date(+state.day.slice(0, 4), +state.day.slice(4, 6) - 1, +state.day.slice(6, 8))
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const groups = state.groups
+    .map((g, i) => `${ROW_EMOJI[i % ROW_EMOJI.length]} ${g.title}`).join('\n');
+
+  return `Word Connect · Puzzle ${state.level} · ${when}\n` +
+    `${formatTime(state.elapsed)} · ${state.moves} moves · ${hints}\n\n${groups}`;
+}
+
 /* Hand the result to the share sheet where there is one, otherwise the
    clipboard. The puzzle number is the point: it identifies the exact board. */
 async function shareResult(btn) {
-  const hints = `${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}`;
   const url = (location.origin + location.pathname).replace(/index\.html$/, '');
-  const when = new Date(+state.day.slice(0, 4), +state.day.slice(4, 6) - 1, +state.day.slice(6, 8))
-    .toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  const text = `Word Connect · ${when} · Puzzle ${state.level}\n` +
-    `${formatTime(state.elapsed)} · ${state.moves} moves · ${hints}\n${url}`;
+  const text = `${resultSummary()}\n\n${url}`;
 
   const say = msg => {
     const el = btn.querySelector('.btn-label') || btn;
