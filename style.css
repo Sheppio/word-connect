@@ -7,7 +7,9 @@
   --card-text: #1b2450;
   --chip-bg: rgba(255, 255, 255, .14);
   --chip-edge: rgba(255, 255, 255, .28);
-  --row-gap: 6px;
+  /* Rows are the unit of play, so they sit further apart than the cards
+     within one — the board reads as six bands rather than a solid grid. */
+  --row-gap: 14px;
   --card-gap: 6px;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -134,10 +136,12 @@ body::before {
   transition: background-color .35s ease;
 }
 
-/* solved row: coloured band + title banner */
+/* Solved row: coloured band + title banner. The two offset shadows carry the
+   band out to the screen edges without growing it vertically, so the gap
+   between rows survives. */
 .row.solved {
   background: var(--row-color);
-  box-shadow: 0 0 0 6px var(--row-color);
+  box-shadow: -10px 0 0 var(--row-color), 10px 0 0 var(--row-color);
 }
 
 .row-label {
@@ -362,6 +366,6 @@ body::before {
 
 /* wider screens: give the board some breathing room */
 @media (min-width: 520px) {
-  :root { --row-gap: 9px; --card-gap: 9px; }
+  :root { --row-gap: 18px; --card-gap: 9px; }
   #app { padding-left: 14px; padding-right: 14px; }
 }
