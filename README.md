@@ -16,8 +16,12 @@ directly. No build step, no dependencies, no server needed.
 - Clear all six rows to finish the puzzle. Confetti goes up over the completed
   board and the scorecard — time, moves, hints used — follows a few seconds
   later, so the finished grid gets a moment to itself.
-- **Hint** pulls one group into the row it's already closest to (3 per puzzle).
-  **Shuffle** re-scatters the unsolved cards. **Restart** returns to the opening
+- **Hint** pulls one group into the row it's already closest to. Hints are a
+  stock rather than a per-puzzle allowance: you hold at most three, and one
+  returns every five minutes. At zero the button is disabled and counts down to
+  the next. Refills run on wall-clock time, so they accrue while the game is
+  closed — and starting a new puzzle can't be used to top them up.
+- **Shuffle** re-scatters the unsolved cards. **Restart** returns to the opening
   layout.
 
 Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.

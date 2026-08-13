@@ -6,7 +6,12 @@
 const ROWS = 6;
 const COLS = 4;
 const SLOTS = ROWS * COLS;
-const HINTS_PER_PUZZLE = 3;
+/* Hints are a stock, not a per-puzzle allowance: one arrives every five
+   minutes up to a maximum of three. Refills are counted from wall-clock
+   timestamps, so they keep coming while the game is closed — and so that
+   starting a new puzzle can't be used to top them up. */
+const HINT_MAX = 3;
+const HINT_REFILL_MS = 5 * 60 * 1000;
 const STORE_KEY = 'word-connect-save-v1';
 
 /* ---------- palette ----------
@@ -169,7 +174,9 @@ const state = {
   board: [],          // 24 cards: { word, group }
   locked: [],         // per row: group index, or -1
   moves: 0,
-  hints: HINTS_PER_PUZZLE,
+  hints: HINT_MAX,     // carried across puzzles
+  nextHintAt: 0,       // epoch ms the next refill lands, 0 when full
+  hintsUsed: 0,        // this puzzle only, for the scorecard
   elapsed: 0,
   done: false
 };
@@ -209,8 +216,14 @@ function startLevel(level, restore) {
   state.board = restore ? restore.board.map(c => ({ word: c.word, group: c.group })) : puzzle.board;
   state.locked = restore ? restore.locked.slice() : new Array(ROWS).fill(-1);
   state.moves = restore ? restore.moves : 0;
-  state.hints = restore ? restore.hints : HINTS_PER_PUZZLE;
   state.elapsed = restore ? restore.elapsed : 0;
+  state.hintsUsed = restore ? (restore.hintsUsed || 0) : 0;
+  /* Hints survive moving to another puzzle; only a save restores them. */
+  if (restore) {
+    state.hints = Math.min(HINT_MAX, Math.max(0, restore.hints | 0));
+    state.nextHintAt = restore.nextHintAt || 0;
+  }
+  grantDueHints();
   state.done = false;
   selected = null;
   clearTimeout(winTimer);  /* don't let a previous puzzle's sheet land on this one */
@@ -579,8 +592,30 @@ function onPointerUp(e) {
 
 /* ---------- tools ---------- */
 
+/* Hand over every refill that has come due — several, if the game has been
+   closed for a while. Returns true when the stock changed. */
+function grantDueHints() {
+  if (state.hints >= HINT_MAX) { state.nextHintAt = 0; return false; }
+  if (!state.nextHintAt) { state.nextHintAt = Date.now() + HINT_REFILL_MS; return false; }
+
+  let granted = 0;
+  while (state.hints < HINT_MAX && Date.now() >= state.nextHintAt) {
+    state.hints++;
+    granted++;
+    state.nextHintAt = state.hints >= HINT_MAX ? 0 : state.nextHintAt + HINT_REFILL_MS;
+  }
+  return granted > 0;
+}
+
+function msToNextHint() {
+  if (state.hints >= HINT_MAX || !state.nextHintAt) return 0;
+  return Math.max(0, state.nextHintAt - Date.now());
+}
+
 function useHint() {
   if (state.hints <= 0 || state.done) return;
+  /* the clock starts the moment the stock drops below full */
+  if (state.hints >= HINT_MAX) state.nextHintAt = Date.now() + HINT_REFILL_MS;
 
   /* Find the (unsolved group, open row) pairing that is already closest. */
   let best = null;
@@ -609,6 +644,7 @@ function useHint() {
   }
 
   state.hints--;
+  state.hintsUsed++;
   setSelected(null);
   commit();
 }
@@ -632,9 +668,28 @@ function refreshHud() {
   document.getElementById('level-num').textContent = String(state.level);
   updatePips();
   document.getElementById('moves').textContent = String(state.moves);
-  document.getElementById('hint-count').textContent = String(state.hints);
-  document.getElementById('btn-hint').disabled = state.hints <= 0 || state.done;
   document.getElementById('timer').textContent = formatTime(state.elapsed);
+  refreshHintButton();
+}
+
+/* With hints in stock the button counts them; with none it counts down to the
+   next one, so the wait is visible rather than a dead button. */
+function refreshHintButton() {
+  const btn = document.getElementById('btn-hint');
+  const badge = document.getElementById('hint-count');
+  const label = document.getElementById('hint-label');
+  const waiting = state.hints <= 0 && msToNextHint() > 0;
+
+  btn.disabled = state.hints <= 0 || state.done;
+  btn.classList.toggle('waiting', waiting && !state.done);
+  badge.hidden = state.hints <= 0;
+  badge.textContent = String(state.hints);
+  label.textContent = waiting && !state.done
+    ? formatTime(Math.ceil(msToNextHint() / 1000))
+    : 'Hint';
+  btn.setAttribute('aria-label', waiting && !state.done
+    ? `Hint, none left, next in ${formatTime(Math.ceil(msToNextHint() / 1000))}`
+    : `Hint, ${state.hints} left`);
 }
 
 /* One pip per group, lit in that group's colour once its row locks. */
@@ -661,6 +716,15 @@ function formatTime(s) {
 }
 
 function tick() {
+  /* Hints refill on wall-clock time, so they keep running while the puzzle is
+     finished or the tab is in the background. */
+  if (grantDueHints()) {
+    announce(state.hints === 1 ? 'A hint is available.' : `${state.hints} hints available.`);
+    vibrate(12);
+    save();
+  }
+  refreshHintButton();
+
   if (state.done || document.hidden) return;
   state.elapsed++;
   document.getElementById('timer').textContent = formatTime(state.elapsed);
@@ -675,6 +739,8 @@ function save() {
       locked: state.locked,
       moves: state.moves,
       hints: state.hints,
+      nextHintAt: state.nextHintAt,
+      hintsUsed: state.hintsUsed,
       elapsed: state.elapsed
     }));
   } catch (e) { /* private mode — play on without saving */ }
@@ -747,7 +813,7 @@ function showWinSheet() {
     <div class="result-grid">
       <div><strong>${formatTime(state.elapsed)}</strong>time</div>
       <div><strong>${state.moves}</strong>moves</div>
-      <div><strong>${HINTS_PER_PUZZLE - state.hints}</strong>hints</div>
+      <div><strong>${state.hintsUsed}</strong>hints</div>
     </div>
     <ul class="solved-list">${found}</ul>`, [
     { label: 'Next puzzle', primary: true, onClick: () => startLevel(state.level + 1) },
@@ -763,6 +829,8 @@ function showHelp() {
       <li>Prefer tapping? Tap one card, then tap the card to swap it with.</li>
       <li>Complete a row and it locks, revealing the group name.</li>
       <li>Clear all six rows to finish the puzzle.</li>
+      <li>A hint fills in a row. You get one back every five minutes, up to
+          three — the button counts down to the next.</li>
     </ul>`, [
     { label: 'Got it', primary: true },
     { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },

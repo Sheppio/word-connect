@@ -339,6 +339,13 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .tool:disabled { opacity: .4; cursor: default; }
 .tool-icon { width: 22px; height: 22px; }
 
+/* waiting on a refill: dimmed, but the countdown stays legible */
+.tool.waiting:disabled { opacity: .62; }
+.tool.waiting .tool-icon { opacity: .5; }
+.tool.waiting .tool-label { font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
+.badge[hidden] { display: none; }
+
 .badge {
   position: absolute;
   top: -6px; right: -4px;
