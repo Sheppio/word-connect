@@ -382,6 +382,33 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   font-size: 15px;
 }
 .tool.next .tool-icon { width: 19px; height: 19px; }
+
+/* A sheen crosses it every five seconds so a finished board doesn't look like
+   a dead end. Same trick as the row sheen: the gradient travels inside its own
+   box, and the pill clips it. */
+.tool.next { overflow: hidden; }
+.tool.next::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg,
+    transparent 42%, rgba(255, 255, 255, .8) 50%, transparent 58%);
+  background-size: 260% 100%;
+  animation: tool-sheen 5s linear infinite;
+}
+
+@keyframes tool-sheen {
+  0%, 84%  { background-position: 130% 0; opacity: 0; }
+  87%      { opacity: 1; }
+  98%      { opacity: 1; }
+  100%     { background-position: -30% 0; opacity: 0; }
+}
+
+/* has to sit after the rule it cancels, not with the others further up */
+@media (prefers-reduced-motion: reduce) {
+  .tool.next::after { animation: none; opacity: 0; }
+}
 .tool:disabled { opacity: .4; cursor: default; }
 .tool-icon { width: 22px; height: 22px; }
 
