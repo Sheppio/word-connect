@@ -621,7 +621,8 @@ function showHelp() {
       <li>Prefer tapping? Tap one card, then tap the card to swap it with.</li>
       <li>Complete a row and it locks, revealing the group name.</li>
       <li>Clear all six rows to finish the puzzle.</li>
-    </ul>`, [
+    </ul>
+    <p class="version">v${APP_VERSION} &middot; ${APP_BUILD}</p>`, [
     { label: 'Got it', primary: true },
     { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },
     { label: 'Skip to next puzzle', onClick: () => startLevel(state.level + 1) }

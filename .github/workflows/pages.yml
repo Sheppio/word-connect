@@ -28,6 +28,16 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
+      # Record which commit is live; the How to play sheet shows it.
+      - name: Stamp build with commit
+        run: |
+          short="${GITHUB_SHA::8}"
+          sed -i "s/^const APP_BUILD = .*/const APP_BUILD = '$short';/" version.js
+          grep -q "const APP_BUILD = '$short';" version.js || {
+            echo "::error::version.js was not stamped"; exit 1;
+          }
+          cat version.js
+
       # The site is plain static files — publish the repository root as-is.
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -49,8 +49,17 @@ four cards still have to share the width of a phone.
 | `index.html` | Page shell: top bar, board, toolbar, dialog |
 | `app.js` | Game state, drag and drop, row locking, hints, saving |
 | `confetti.js` | Canvas particle burst for the win celebration |
+| `version.js` | Version string; the build hash is stamped in at deploy time |
 | `data.js` | The word-set pool |
 | `style.css` | Layout and theme, sized to fit one screen without scrolling |
+
+## Versioning
+
+The How to play sheet ends with a line like `v0.1.0 · 8b9bfce8`. Bump
+`APP_VERSION` in `version.js` when you release; `APP_BUILD` is left alone —
+the deploy workflow rewrites it with the commit it is publishing, and the build
+fails if that stamp doesn't take. Opened from a working copy it reads `dev`,
+which is how you can tell a local copy from the live one.
 
 ## Deploying
 
