@@ -12,6 +12,10 @@ const SLOTS = ROWS * COLS;
    starting a new puzzle can't be used to top them up. */
 const HINT_MAX = 3;
 const HINT_REFILL_MS = 5 * 60 * 1000;
+
+/* Shuffling repeatedly is a way to have the game solve rows for you by chance,
+   so the button sits out five seconds after each use. */
+const SHUFFLE_COOLDOWN_MS = 5000;
 const STORE_KEY = 'word-connect-save-v1';
 
 /* ---------- palette ----------
@@ -217,6 +221,7 @@ const state = {
   hints: HINT_MAX,     // carried across puzzles
   nextHintAt: 0,       // epoch ms the next refill lands, 0 when full
   hintsUsed: 0,        // this puzzle only, for the scorecard
+  shuffleReadyAt: 0,   // epoch ms the shuffle button comes back
   elapsed: 0,
   done: false
 };
@@ -277,8 +282,10 @@ function startPuzzle(day, level, restore) {
   if (restore) {
     state.hints = Math.min(HINT_MAX, Math.max(0, restore.hints | 0));
     state.nextHintAt = restore.nextHintAt || 0;
+    state.shuffleReadyAt = restore.shuffleReadyAt || 0;
   }
   grantDueHints();
+  watchShuffleCooldown();
   state.done = false;
   selected = null;
   clearTimeout(winTimer);  /* don't let a previous puzzle's sheet land on this one */
@@ -704,13 +711,46 @@ function useHint() {
   commit();
 }
 
+function msToShuffle() {
+  return Math.max(0, (state.shuffleReadyAt || 0) - Date.now());
+}
+
+/* Ticked faster than the one-second clock so five seconds counts down cleanly
+   and the button returns the moment it's due. */
+let shuffleTimer = null;
+
+function watchShuffleCooldown() {
+  clearInterval(shuffleTimer);
+  refreshShuffleButton();
+  if (msToShuffle() <= 0) return;
+  shuffleTimer = setInterval(() => {
+    refreshShuffleButton();
+    if (msToShuffle() <= 0) { clearInterval(shuffleTimer); shuffleTimer = null; }
+  }, 200);
+}
+
+function refreshShuffleButton() {
+  const btn = document.getElementById('btn-shuffle');
+  const label = document.getElementById('shuffle-label');
+  const secs = Math.ceil(msToShuffle() / 1000);
+  const cooling = secs > 0 && !state.done;
+
+  btn.disabled = cooling || state.done;
+  btn.classList.toggle('waiting', cooling);
+  label.textContent = cooling ? `${secs}s` : 'Shuffle';
+  btn.setAttribute('aria-label',
+    cooling ? `Shuffle, ready in ${secs} second${secs === 1 ? '' : 's'}` : 'Shuffle');
+}
+
 function doShuffle() {
-  if (state.done) return;
+  if (state.done || msToShuffle() > 0) return;
   const open = [];
   for (let i = 0; i < SLOTS; i++) if (!isLockedIndex(i)) open.push(i);
   const cards = shuffled(open.map(i => state.board[i]), Math.random);
   open.forEach((slot, k) => { state.board[slot] = cards[k]; });
   setSelected(null);
+  state.shuffleReadyAt = Date.now() + SHUFFLE_COOLDOWN_MS;
+  watchShuffleCooldown();
   commit();
   announce('Cards shuffled.');
 }
@@ -725,6 +765,7 @@ function refreshHud() {
   document.getElementById('moves').textContent = String(state.moves);
   document.getElementById('timer').textContent = formatTime(state.elapsed);
   refreshHintButton();
+  refreshShuffleButton();
 }
 
 /* With hints in stock the button counts them; with none it counts down to the
@@ -797,6 +838,7 @@ function save() {
       hints: state.hints,
       nextHintAt: state.nextHintAt,
       hintsUsed: state.hintsUsed,
+      shuffleReadyAt: state.shuffleReadyAt,
       elapsed: state.elapsed
     }));
   } catch (e) { /* private mode — play on without saving */ }

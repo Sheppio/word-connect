@@ -21,8 +21,9 @@ directly. No build step, no dependencies, no server needed.
   returns every five minutes. At zero the button is disabled and counts down to
   the next. Refills run on wall-clock time, so they accrue while the game is
   closed — and starting a new puzzle can't be used to top them up.
-- **Shuffle** re-scatters the unsolved cards. **Restart** returns to the opening
-  layout.
+- **Shuffle** re-scatters the unsolved cards, then sits out five seconds —
+  shuffling repeatedly is otherwise a way to have chance solve rows for you.
+  **Restart** returns to the opening layout.
 
 Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 
