@@ -28,8 +28,15 @@ Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 
 ## Puzzles
 
-Puzzle numbers are deterministic: puzzle 12 deals the same board on any device,
-so it can be shared or replayed.
+**There's one puzzle a day, and it's the same board for everyone.** The board
+has always been a pure function of the puzzle number — no device state, no
+clock, no stored randomness — so numbering by date is what makes times worth
+comparing. Puzzle #1 is 1 January 2026; today's number is the days since, taken
+from the player's local calendar date so the day turns over at their own
+midnight. The win sheet offers the result to the share sheet (or the clipboard),
+puzzle number included, so a friend can look up the same board.
+
+The menu walks to any other puzzle — previous, next, or back to today's.
 
 `data.js` holds 70 categories and about a thousand words. Each category lists
 far more members than a row can hold — twelve months, seven days, dozens of

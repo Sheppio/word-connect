@@ -391,10 +391,15 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   align-items: center;
   width: 100%;
   max-width: 380px;
+  max-height: 100%;
 }
 
 .sheet {
   width: 100%;
+  /* a long sheet scrolls inside itself rather than off a short screen */
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px 20px 18px;
   border-radius: 20px;
   background: linear-gradient(180deg, #2a3aa8, #182562);
@@ -406,6 +411,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 @keyframes rise { from { transform: translateY(14px) scale(.96); opacity: 0; } }
 
 .sheet h2 { margin: 0 0 10px; font-size: 21px; }
+.sheet-sub {
+  margin: -4px 0 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 600;
+  opacity: .68 !important;
+}
 .sheet p { margin: 0 0 10px; font-size: 14px; line-height: 1.5; opacity: .9; }
 .sheet ul { margin: 0 0 12px; padding-left: 20px; text-align: left; font-size: 14px; line-height: 1.6; opacity: .9; }
 

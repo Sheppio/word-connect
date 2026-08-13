@@ -89,6 +89,31 @@ function longestToken(word) {
   return word.split(' ').reduce((n, part) => Math.max(n, part.length), 0);
 }
 
+/* ---------- which puzzle is today's ----------
+
+   The board has always been a pure function of the puzzle number, so a given
+   number deals the same cards on every device. Numbering by date makes that
+   useful: everyone playing on the same day works the same puzzle and can
+   compare times.
+
+   Counted from the local calendar date, so a player's day turns over at their
+   own midnight. Both ends go through Date.UTC on the Y/M/D, which keeps the
+   arithmetic clear of daylight saving. */
+const PUZZLE_EPOCH = Date.UTC(2026, 0, 1);   // puzzle #1
+
+function puzzleNumberOn(date) {
+  const day = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.max(1, Math.round((day - PUZZLE_EPOCH) / 86400000) + 1);
+}
+
+function todaysPuzzle() { return puzzleNumberOn(new Date()); }
+
+function puzzleDateLabel(n) {
+  const d = new Date(PUZZLE_EPOCH + (n - 1) * 86400000);
+  return d.toLocaleDateString(undefined,
+    { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+}
+
 /* ---------- deterministic randomness ---------- */
 
 function mulberry32(a) {
@@ -735,6 +760,7 @@ function save() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       level: state.level,
+      savedDay: todaysPuzzle(),
       board: state.board,
       locked: state.locked,
       moves: state.moves,
@@ -769,7 +795,10 @@ function openSheet(title, bodyHtml, actions, showVersion) {
     const b = document.createElement('button');
     b.className = 'btn' + (a.primary ? ' primary' : '');
     b.textContent = a.label;
-    b.addEventListener('click', () => { closeSheet(); a.onClick && a.onClick(); });
+    b.addEventListener('click', () => {
+      if (!a.keepOpen) closeSheet();
+      a.onClick && a.onClick(b);
+    });
     sheetActions.appendChild(b);
   });
   overlayEl.hidden = false;
@@ -816,13 +845,50 @@ function showWinSheet() {
       <div><strong>${state.hintsUsed}</strong>hints</div>
     </div>
     <ul class="solved-list">${found}</ul>`, [
-    { label: 'Next puzzle', primary: true, onClick: () => startLevel(state.level + 1) },
+    { label: 'Share result', primary: true, keepOpen: true, onClick: shareResult },
+    { label: 'Next puzzle', onClick: () => startLevel(state.level + 1) },
     { label: 'Play this one again', onClick: () => startLevel(state.level) }
   ]);
 }
 
+/* Hand the result to the share sheet where there is one, otherwise the
+   clipboard. The puzzle number is the point: it identifies the exact board. */
+async function shareResult(btn) {
+  const hints = `${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}`;
+  const url = (location.origin + location.pathname).replace(/index\.html$/, '');
+  const text = `Word Connect #${state.level}\n` +
+    `${formatTime(state.elapsed)} · ${state.moves} moves · ${hints}\n${url}`;
+
+  const say = msg => {
+    const was = btn.textContent;
+    btn.textContent = msg;
+    announce(msg);
+    setTimeout(() => { btn.textContent = was; }, 1600);
+  };
+
+  try {
+    if (navigator.share) { await navigator.share({ text }); return; }
+    await navigator.clipboard.writeText(text);
+    say('Copied!');
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;   // share sheet dismissed
+    say('Copy failed');
+  }
+}
+
 function showHelp() {
+  const today = todaysPuzzle();
+  const actions = [{ label: 'Got it', primary: true }];
+  if (state.level !== today) {
+    actions.push({ label: `Today's puzzle (#${today})`, onClick: () => startLevel(today) });
+  }
+  actions.push(
+    { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },
+    { label: 'Next puzzle', onClick: () => startLevel(state.level + 1) }
+  );
+
   openSheet('How to play', `
+    <p class="sheet-sub">Puzzle #${state.level} · ${puzzleDateLabel(state.level)}</p>
     <ul>
       <li>Every row should end up holding four related words.</li>
       <li>Drag a card onto another to swap the two.</li>
@@ -831,11 +897,9 @@ function showHelp() {
       <li>Clear all six rows to finish the puzzle.</li>
       <li>A hint fills in a row. You get one back every five minutes, up to
           three — the button counts down to the next.</li>
-    </ul>`, [
-    { label: 'Got it', primary: true },
-    { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },
-    { label: 'Skip to next puzzle', onClick: () => startLevel(state.level + 1) }
-  ], true);
+      <li>There's a new puzzle each day, and it's the same one for everyone —
+          so times are worth comparing.</li>
+    </ul>`, actions, true);
 }
 
 /* ---------- wiring ---------- */
@@ -866,8 +930,21 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('touchmove', e => { if (drag && drag.moved) e.preventDefault(); },
   { passive: false });
 
+/* A save from an earlier day is stale news: the daily has moved on, so open
+   today's puzzle. Within the same day the save is honoured, including a puzzle
+   the player browsed to from the menu. */
 const saved = load();
-startLevel(saved ? saved.level : 1, saved);
+const sameDay = saved && saved.savedDay === todaysPuzzle();
+if (sameDay) {
+  startLevel(saved.level, saved);
+} else {
+  /* carry the hint stock over even though the puzzle doesn't */
+  if (saved) {
+    state.hints = Math.min(HINT_MAX, Math.max(0, saved.hints | 0));
+    state.nextHintAt = saved.nextHintAt || 0;
+  }
+  startLevel(todaysPuzzle());
+}
 if (!saved) showHelp();
 timerId = setInterval(tick, 1000);
 document.fonts && document.fonts.ready.then(fitAllText);
