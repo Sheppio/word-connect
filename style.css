@@ -104,26 +104,34 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .level-chip-label { font-size: 11px; font-weight: 600; opacity: .75; letter-spacing: .04em; text-transform: uppercase; }
 
-/* one pip per group; each takes its row's colour as that row locks */
-.pips {
+/* Streak: lit once today's first puzzle is done, grey while it's outstanding */
+.streak {
   display: flex;
-  gap: 4px;
-  padding: 8px 9px;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 11px 6px 8px;
   border-radius: 999px;
   background: var(--chip-bg);
   border: 1px solid var(--chip-edge);
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, .45);
 }
-.pip {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .26);
-  transition: background-color .3s ease, transform .3s cubic-bezier(.3, 1.5, .5, 1);
-}
-.pip.filled {
-  background: var(--pip-color);
-  transform: scale(1.25);
-  box-shadow: 0 0 6px var(--pip-color);
+.flame { width: 19px; height: 19px; stroke: none; }
+.flame-outer { fill: rgba(255, 255, 255, .32); }
+.flame-core { fill: rgba(255, 255, 255, .18); }
+
+.streak.lit { color: #fff; }
+.streak.lit .flame-outer { fill: #ff8a2b; }
+.streak.lit .flame-core { fill: #ffd257; }
+.streak.lit .flame { filter: drop-shadow(0 0 5px rgba(255, 138, 43, .55)); }
+
+.streak.bumped .flame { animation: flare .7s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes flare {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.45); }
+  100% { transform: scale(1); }
 }
 
 .stats {
@@ -305,8 +313,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card, .row, .row-label, .pip { transition: none !important; }
-  .card.pop, .row.solved::after { animation: none; }
+  .card, .row, .row-label { transition: none !important; }
+  .card.pop, .row.solved::after, .streak.bumped .flame { animation: none; }
 }
 
 /* ---------- toolbar ---------- */

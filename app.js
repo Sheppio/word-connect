@@ -24,6 +24,11 @@ const STORE_KEY = 'word-connect-save-v1';
 const HISTORY_KEY = 'word-connect-history-v1';
 const HISTORY_MAX = 500;
 
+/* Daily streak: days in a row on which the player finished that day's first
+   puzzle. Kept as a count plus the day it last advanced, rather than counted
+   out of the solve log, so a long streak can't be lost to the log's cap. */
+const STREAK_KEY = 'word-connect-streak-v1';
+
 /* ---------- palette ----------
 
    Six hues at a fixed *perceptual* lightness. HSL won't do this: hsl(50 74% 61%)
@@ -767,7 +772,7 @@ let timerId = null;
 
 function refreshHud() {
   document.getElementById('level-num').textContent = String(state.level);
-  updatePips();
+  refreshStreak(false);
   document.getElementById('moves').textContent = String(state.moves);
   document.getElementById('timer').textContent = formatTime(state.elapsed);
   refreshHintButton();
@@ -794,23 +799,26 @@ function refreshHintButton() {
     : `Hint, ${state.hints} left`);
 }
 
-/* One pip per group, lit in that group's colour once its row locks. */
-function updatePips() {
-  const pips = document.querySelectorAll('#pips .pip');
-  let solved = 0;
-  pips.forEach((pip, g) => {
-    const done = state.locked.includes(g);
-    const group = state.groups[g];
-    if (done && group) {
-      pip.style.setProperty('--pip-color', group.cardColor);
-      pip.classList.add('filled');
-      solved++;
-    } else {
-      pip.classList.remove('filled');
-    }
-  });
-  document.getElementById('pips')
-    .setAttribute('aria-label', `${solved} of ${ROWS} groups solved`);
+/* The flame lights once the day's first puzzle is done and greys out again at
+   midnight, so it always shows whether today is still outstanding. */
+let streakShownFor = '';
+
+function refreshStreak(bumped) {
+  const { count, todayDone } = currentStreak();
+  const el = document.getElementById('streak');
+  streakShownFor = localDay();
+
+  document.getElementById('streak-count').textContent = String(count);
+  el.classList.toggle('lit', todayDone);
+  el.setAttribute('aria-label', count === 0
+    ? 'No streak yet — finish today\'s first puzzle to start one'
+    : `${count} day streak, ${todayDone ? "today's first puzzle done" : 'today not played yet'}`);
+
+  if (bumped && !prefersReducedMotion()) {
+    el.classList.remove('bumped');
+    void el.offsetWidth;
+    el.classList.add('bumped');
+  }
 }
 
 function formatTime(s) {
@@ -826,6 +834,8 @@ function tick() {
     save();
   }
   refreshHintButton();
+  /* midnight rolls the flame back to grey without a reload */
+  if (streakShownFor !== localDay()) refreshStreak(false);
 
   if (state.done || document.hidden) return;
   state.elapsed++;
@@ -876,6 +886,42 @@ function recordSolve() {
   return entry;
 }
 
+function dayBefore(day) {
+  const d = new Date(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8));
+  d.setDate(d.getDate() - 1);
+  return localDay(d);
+}
+
+function loadStreak() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STREAK_KEY) || 'null');
+    if (s && typeof s.count === 'number' && typeof s.lastDay === 'string') return s;
+  } catch (e) { /* fall through */ }
+  return { count: 0, lastDay: '' };
+}
+
+/* Where the streak stands right now. It survives the day after it last
+   advanced — that's the day the player still has time to keep it alive — and
+   is spent once a whole day passes without the first puzzle. */
+function currentStreak() {
+  const s = loadStreak();
+  const today = localDay();
+  if (s.lastDay === today) return { count: s.count, todayDone: true };
+  if (s.lastDay === dayBefore(today)) return { count: s.count, todayDone: false };
+  return { count: 0, todayDone: false };
+}
+
+/* Called when the day's first puzzle is solved. */
+function bumpStreak() {
+  const today = localDay();
+  const s = loadStreak();
+  if (s.lastDay === today) return false;      // already counted today
+  s.count = s.lastDay === dayBefore(today) ? s.count + 1 : 1;
+  s.lastDay = today;
+  try { localStorage.setItem(STREAK_KEY, JSON.stringify(s)); } catch (e) { /* ignore */ }
+  return true;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -916,8 +962,12 @@ function closeSheet() { overlayEl.hidden = true; }
 
 function finish() {
   state.done = true;
-  refreshHud();
   recordSolve();
+
+  /* only the day's first puzzle, and only on the day it belongs to */
+  const grew = state.level === 1 && state.day === localDay() && bumpStreak();
+  refreshHud();
+  if (grew) refreshStreak(true);
   save();
   vibrate([20, 60, 30]);
   announce('All six groups complete!');
@@ -1016,6 +1066,8 @@ function showHelp() {
           three — the button counts down to the next.</li>
       <li>Play as many as you like. Everyone gets the same puzzles in the same
           order each day, so times are worth comparing.</li>
+      <li>Finish the day's first puzzle to keep your streak — the flame lights
+          up once it's done, and goes out if you miss a day.</li>
     </ul>`, actions, true);
 }
 

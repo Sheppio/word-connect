@@ -27,6 +27,17 @@ directly. No build step, no dependencies, no server needed.
 
 Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 
+## Streak
+
+The flame in the header counts consecutive days on which the player finished
+**that day's first puzzle** — later puzzles that day don't affect it. It's lit
+once today's is done and grey while it's still outstanding, so the state answers
+"have I played today?" at a glance. Miss a whole day and it goes back to zero.
+
+Stored in `word-connect-streak-v1` as `{ count, lastDay }` rather than counted
+out of the solve log, so a long streak can't be lost to the log's 500-entry cap.
+The flame greys itself at midnight without needing a reload.
+
 ## The solve log
 
 Every completed puzzle is appended to `word-connect-history-v1` in
