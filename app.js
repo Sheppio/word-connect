@@ -244,6 +244,7 @@ let winTimer = null;       // pending win sheet, held back while we celebrate
 
 /* ---------- dom ---------- */
 
+const appEl = document.getElementById('app');
 const boardEl = document.getElementById('board');
 const liveEl = document.getElementById('live');
 const overlayEl = document.getElementById('overlay');
@@ -297,7 +298,9 @@ function startPuzzle(day, level, restore) {
   }
   grantDueHints();
   watchShuffleCooldown();
-  state.done = false;
+  /* a restored board may already be finished — reloading on one should offer
+     the way on, not a hint button with nothing left to hint */
+  state.done = state.locked.every(g => g >= 0);
   selected = null;
   clearTimeout(winTimer);  /* don't let a previous puzzle's sheet land on this one */
 
@@ -777,6 +780,11 @@ function refreshHud() {
   document.getElementById('timer').textContent = formatTime(state.elapsed);
   refreshHintButton();
   refreshShuffleButton();
+
+  /* a finished board has nothing to hint or shuffle — the way on takes over */
+  document.getElementById('btn-hint').hidden = state.done;
+  document.getElementById('btn-shuffle').hidden = state.done;
+  document.getElementById('btn-next').hidden = !state.done;
 }
 
 /* With hints in stock the button counts them; with none it counts down to the
@@ -966,9 +974,15 @@ function openSheet(title, bodyHtml, actions, showVersion) {
     sheetActions.appendChild(b);
   });
   overlayEl.hidden = false;
+  /* the board and toolbar are behind a dialog — take them out of reach so a
+     stray tap or a screen reader can't land on the buttons underneath */
+  appEl.inert = true;
 }
 
-function closeSheet() { overlayEl.hidden = true; }
+function closeSheet() {
+  overlayEl.hidden = true;
+  appEl.inert = false;
+}
 
 function finish() {
   state.done = true;
@@ -1090,12 +1104,7 @@ function showHelp() {
 document.getElementById('btn-hint').addEventListener('click', useHint);
 document.getElementById('btn-shuffle').addEventListener('click', doShuffle);
 document.getElementById('btn-menu').addEventListener('click', showHelp);
-document.getElementById('btn-new').addEventListener('click', () => {
-  openSheet('Restart puzzle?', '<p>The board goes back to its opening layout.</p>', [
-    { label: 'Restart', primary: true, onClick: () => startLevel(state.level) },
-    { label: 'Keep playing' }
-  ]);
-});
+document.getElementById('btn-next').addEventListener('click', nextPuzzle);
 
 /* Tapping the backdrop — including the gap around the dialog — dismisses it. */
 overlayEl.addEventListener('click', e => {

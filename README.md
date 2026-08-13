@@ -23,7 +23,8 @@ directly. No build step, no dependencies, no server needed.
   closed — and starting a new puzzle can't be used to top them up.
 - **Shuffle** re-scatters the unsolved cards, then sits out five seconds —
   shuffling repeatedly is otherwise a way to have chance solve rows for you.
-  **Restart** returns to the opening layout.
+- Once a board is finished those two give way to **Next puzzle**, since there's
+  nothing left to hint or shuffle.
 
 Progress saves to `localStorage`, so closing the tab mid-puzzle loses nothing.
 

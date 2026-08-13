@@ -367,7 +367,21 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   font-weight: 700;
   cursor: pointer;
 }
+.tool[hidden] { display: none; }
 .tool:active { transform: scale(.95); }
+
+/* the way on from a finished board */
+.tool.next {
+  flex-direction: row-reverse;   /* arrow trails the label, pointing on */
+  gap: 8px;
+  min-width: 0;
+  padding: 11px 22px;
+  border-color: rgba(255, 255, 255, .4);
+  background: linear-gradient(180deg, #ffd257, #f7a416);
+  color: #2a1c00;
+  font-size: 15px;
+}
+.tool.next .tool-icon { width: 19px; height: 19px; }
 .tool:disabled { opacity: .4; cursor: default; }
 .tool-icon { width: 22px; height: 22px; }
 
