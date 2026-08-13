@@ -292,7 +292,7 @@ const CATEGORIES = [
 
   { title: 'Superheroes', words: [
     'BATMAN', 'THOR', 'HULK', 'FLASH', 'SUPERMAN', 'IRON MAN', 'SPIDERMAN',
-    'ROBIN', 'WOLVERINE', 'CYCLOPS', 'AQUAMAN', 'GROOT', 'STORM'] },
+    'WOLVERINE', 'CYCLOPS', 'AQUAMAN', 'GROOT', 'STORM'] },
 
   { title: 'Coding Languages', words: [
     'PYTHON', 'JAVA', 'RUBY', 'SWIFT', 'RUST', 'GO', 'KOTLIN', 'PERL', 'SCALA',
