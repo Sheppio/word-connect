@@ -450,10 +450,21 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(4, 8, 40, .74);
-  backdrop-filter: blur(4px);
   animation: fade .2s ease;
 }
+
+/* The dim and blur live on a layer behind the dialog rather than on an
+   ancestor of it. backdrop-filter forces its whole subtree onto a composited
+   layer, and text rasterised there loses subpixel antialiasing — which is what
+   made the sheet's type look faintly soft. */
+.overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 8, 40, .74);
+  backdrop-filter: blur(4px);
+}
+.sheet-wrap { position: relative; z-index: 1; }
 .overlay[hidden] { display: none; }
 @keyframes fade { from { opacity: 0; } }
 
