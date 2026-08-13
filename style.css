@@ -150,7 +150,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   gap: var(--row-gap);
   min-height: 0;
   /* headroom so the top row's banner has somewhere to sit */
-  padding-top: 26px;
+  padding-top: 32px;
 }
 
 .row {
@@ -205,16 +205,16 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   /* grown from its bottom edge, so the reveal never lifts it off the band */
   transform-origin: 50% 100%;
   transform: translate(-50%, -100%) scale(.8);
-  padding: 3px 16px 4px;
-  border-radius: 10px 10px 0 0;
+  padding: 5px 19px 6px;
+  border-radius: 12px 12px 0 0;
   background: var(--row-color, #888);
   /* deliberately laps over the row above — the shadow sells it as a tab
      sitting in front, rather than two things colliding */
   box-shadow: 0 -2px 5px rgba(6, 12, 48, .22);
-  color: rgba(0, 0, 0, .78);
-  font-size: 13px;
+  color: rgba(0, 0, 0, .8);
+  font-size: 15px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
   letter-spacing: .07em;
   text-transform: uppercase;
   white-space: nowrap;
