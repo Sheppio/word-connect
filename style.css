@@ -131,6 +131,8 @@ body::before {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--card-gap);
+  /* the band shows above and below the cards, as it does at either end */
+  padding: 5px 0;
   border-radius: 12px;
   min-height: 0;
   transition: background-color .35s ease;
@@ -147,7 +149,11 @@ body::before {
 .row-label {
   position: absolute;
   left: 50%;
-  top: 0;              /* sits flush on the band, like a tab */
+  /* 1px into the band — same colour, so the overlap is invisible, and it
+     survives the fractional pixel positions the 1fr rows land on */
+  top: 1px;
+  /* grown from its bottom edge, so the reveal never lifts it off the band */
+  transform-origin: 50% 100%;
   transform: translate(-50%, -100%) scale(.8);
   padding: 3px 16px 4px;
   border-radius: 8px 8px 0 0;
