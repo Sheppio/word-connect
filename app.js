@@ -643,7 +643,10 @@ document.getElementById('btn-new').addEventListener('click', () => {
   ]);
 });
 
-overlayEl.addEventListener('click', e => { if (e.target === overlayEl) closeSheet(); });
+/* Tapping the backdrop — including the gap around the dialog — dismisses it. */
+overlayEl.addEventListener('click', e => {
+  if (e.target === overlayEl || e.target.classList.contains('sheet-wrap')) closeSheet();
+});
 
 let resizeId = null;
 window.addEventListener('resize', () => {

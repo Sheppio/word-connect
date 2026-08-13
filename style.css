@@ -299,9 +299,17 @@ body::before {
 .overlay[hidden] { display: none; }
 @keyframes fade { from { opacity: 0; } }
 
-.sheet {
+/* Holds the dialog and, beneath it, the version footnote. */
+.sheet-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
   max-width: 380px;
+}
+
+.sheet {
+  width: 100%;
   padding: 22px 20px 18px;
   border-radius: 20px;
   background: linear-gradient(180deg, #2a3aa8, #182562);
@@ -316,12 +324,13 @@ body::before {
 .sheet p { margin: 0 0 10px; font-size: 14px; line-height: 1.5; opacity: .9; }
 .sheet ul { margin: 0 0 12px; padding-left: 20px; text-align: left; font-size: 14px; line-height: 1.6; opacity: .9; }
 
+/* Sits on the backdrop below the dialog — present, but easy to look past. */
 .version {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: .06em;
-  opacity: .22;
+  color: rgba(255, 255, 255, .3);
   font-variant-numeric: tabular-nums;
 }
 .version[hidden] { display: none; }

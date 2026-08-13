@@ -55,11 +55,12 @@ four cards still have to share the width of a phone.
 
 ## Versioning
 
-The How to play sheet ends with a line like `v0.1.0 · 8b9bfce8`. Bump
-`APP_VERSION` in `version.js` when you release; `APP_BUILD` is left alone —
-the deploy workflow rewrites it with the commit it is publishing, and the build
-fails if that stamp doesn't take. Opened from a working copy it reads `dev`,
-which is how you can tell a local copy from the live one.
+A line like `v0.1.1 · a8d3ae98` sits under the How to play sheet. Bump
+`APP_VERSION` in `version.js` in the same commit as the change it describes —
+patch for a fix or small improvement, minor for a new feature. `APP_BUILD` is
+left alone: the deploy workflow rewrites it with the commit it is publishing,
+and the build fails if that stamp doesn't take. Opened from a working copy it
+reads `dev`, which is how you can tell a local copy from the live one.
 
 ## Deploying
 
