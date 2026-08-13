@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#101a5c">
+<meta name="description" content="Drag related words into rows until every group is complete.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Word Connect</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar">
+    <button class="icon-btn" id="btn-menu" aria-label="Menu">&#9776;</button>
+    <div class="level-chip" aria-label="Puzzle number">
+      <span class="level-chip-label">Puzzle</span>
+      <span id="level-num">1</span>
+    </div>
+    <div class="progress-chip">
+      <span id="solved-count">0</span><span class="dim">/6</span>
+    </div>
+    <div class="stats">
+      <span id="timer">0:00</span>
+      <span class="dim" aria-hidden="true">·</span>
+      <span id="moves">0</span><span class="dim"> moves</span>
+    </div>
+  </header>
+
+  <main class="board-wrap">
+    <div id="board" class="board" role="grid" aria-label="Word grid: six rows of four cards"></div>
+  </main>
+
+  <footer class="toolbar">
+    <button class="tool" id="btn-hint">
+      <span class="tool-icon">💡</span>
+      <span class="tool-label">Hint</span>
+      <span class="badge" id="hint-count">3</span>
+    </button>
+    <button class="tool" id="btn-shuffle">
+      <span class="tool-icon">🔀</span>
+      <span class="tool-label">Shuffle</span>
+    </button>
+    <button class="tool" id="btn-new">
+      <span class="tool-icon">↺</span>
+      <span class="tool-label">Restart</span>
+    </button>
+  </footer>
+
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <h2 id="sheet-title"></h2>
+    <div id="sheet-body"></div>
+    <div class="sheet-actions" id="sheet-actions"></div>
+  </div>
+</div>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

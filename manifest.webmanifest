@@ -1,0 +1,13 @@
+{
+  "name": "Word Connect",
+  "short_name": "Word Connect",
+  "description": "Drag related words into rows until every group is complete.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101a5c",
+  "theme_color": "#101a5c",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
