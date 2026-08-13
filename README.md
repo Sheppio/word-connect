@@ -63,6 +63,11 @@ mulberry32): no device state, no clock, no stored randomness, so the same seed
 deals the same cards anywhere. Players only ever see the number — Puzzle 1,
 Puzzle 2 — since the date is implied by playing today.
 
+Puzzles unlock in order: the highest number open today is one past the highest
+solved, worked out from the solve log rather than tracked separately so it can't
+drift. Earlier puzzles can be revisited freely; a save pointing at a locked one
+is pulled back.
+
 The date is the device's own calendar day, so it turns over at the player's
 midnight rather than UTC's. The win sheet offers the result to the share sheet
 (or the clipboard) naming the date and puzzle number, so a friend can find the

@@ -868,6 +868,16 @@ function loadHistory() {
   } catch (e) { return []; }
 }
 
+/* Puzzles are played in order: the highest number open today is one past the
+   highest solved. Derived from the solve log rather than tracked separately,
+   so it can't drift out of step with what was actually finished. */
+function highestSolvedToday() {
+  const today = localDay();
+  return loadHistory().reduce((n, h) => h.day === today ? Math.max(n, h.puzzle) : n, 0);
+}
+
+function nextUnlocked() { return highestSolvedToday() + 1; }
+
 function recordSolve() {
   const entry = {
     seed: seedFor(state.day, state.level),
@@ -1049,10 +1059,13 @@ function showHelp() {
   if (state.day !== localDay()) {
     actions.push({ label: "Today's first puzzle", onClick: () => startPuzzle(localDay(), 1) });
   }
-  actions.push(
-    { label: 'Previous puzzle', onClick: () => startLevel(Math.max(1, state.level - 1)) },
-    { label: 'Next puzzle', onClick: nextPuzzle }
-  );
+  if (state.level > 1) {
+    actions.push({ label: 'Previous puzzle', onClick: () => startLevel(state.level - 1) });
+  }
+  /* forward only into a puzzle that's been unlocked by finishing this one */
+  if (state.day === localDay() && state.level < nextUnlocked()) {
+    actions.push({ label: 'Next puzzle', onClick: nextPuzzle });
+  }
 
   openSheet('How to play', `
     <p class="sheet-sub">Puzzle ${state.level} · ${dayLabel(state.day)}</p>
@@ -1064,8 +1077,9 @@ function showHelp() {
       <li>Clear all six rows to finish the puzzle.</li>
       <li>A hint fills in a row. You get one back every five minutes, up to
           three — the button counts down to the next.</li>
-      <li>Play as many as you like. Everyone gets the same puzzles in the same
-          order each day, so times are worth comparing.</li>
+      <li>Play as many as you like — they unlock in order, so finish one to
+          reach the next. Everyone gets the same puzzles in the same order each
+          day, so times are worth comparing.</li>
       <li>Finish the day's first puzzle to keep your streak — the flame lights
           up once it's done, and goes out if you miss a day.</li>
     </ul>`, actions, true);
@@ -1104,7 +1118,9 @@ document.addEventListener('touchmove', e => { if (drag && drag.moved) e.preventD
    that day was in play. */
 const saved = load();
 if (saved && saved.day === localDay()) {
-  startPuzzle(saved.day, saved.level, saved);
+  /* never resume past what's been unlocked, whatever the save claims */
+  const level = Math.min(saved.level, nextUnlocked());
+  startPuzzle(saved.day, level, level === saved.level ? saved : null);
 } else {
   /* the hint stock refills on real time, so it isn't the day's to reset */
   if (saved) {
