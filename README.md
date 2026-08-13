@@ -78,10 +78,10 @@ passed to the share sheet as a PNG. The measurements there mirror `.sheet`,
 `.result-grid` and `.solved-list` in `style.css`; change one and change the
 other, or the picture stops looking like the dialog it came from.
 
-The image travels with a line of text carrying the link, since a picture can't
-be clicked. Each step of the share degrades on its own — no canvas, no file
-sharing, or no clipboard images each falls back to the text alone rather than
-failing:
+All that travels with the picture is the link, since a picture can't be
+clicked — everything else is already in the image. The written summary below is
+the fallback for when the picture *can't* go: no canvas, no file sharing, or no
+clipboard images each sends it instead of failing the share.
 
 ```
 Word Connect · Puzzle 10 · 13 Aug 2026

@@ -1095,13 +1095,12 @@ function resultImage() {
 }
 
 /* Hand the result to the share sheet where there is one, otherwise the
-   clipboard. The picture is the message; the text that rides along with it
-   carries the link, since an image can't. Every step degrades on its own:
-   no canvas, no file sharing or no clipboard images each falls back to the
-   text alone rather than failing the share. */
+   clipboard. The picture is the message, so the text alongside it is only the
+   link — the picture already says everything else. The written summary is for
+   when there is no picture: no canvas, no file sharing or no clipboard images
+   each falls back to it rather than failing the share. */
 async function shareResult(btn) {
   const url = (location.origin + location.pathname).replace(/index\.html$/, '');
-  const text = `${resultSummary()}\n\n${url}`;
 
   const say = msg => {
     const el = btn.querySelector('.btn-label') || btn;
@@ -1120,25 +1119,31 @@ async function shareResult(btn) {
     }
   } catch (err) { /* drawing failed — the text still says everything */ }
 
+  /* whichever of the two goes out depends on whether the picture travels */
+  const written = `${resultSummary()}\n\n${url}`;
+
   try {
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], text });
+      await navigator.share({ files: [file], text: url });
       return;
     }
-    if (navigator.share) { await navigator.share({ text }); return; }
+
+    /* a share sheet that won't take files still beats copying, so the written
+       summary goes out rather than the picture */
+    if (navigator.share) { await navigator.share({ text: written }); return; }
 
     if (file && window.ClipboardItem && navigator.clipboard.write) {
       try {
         await navigator.clipboard.write([new ClipboardItem({
           'image/png': file,
-          'text/plain': new Blob([text], { type: 'text/plain' })
+          'text/plain': new Blob([url], { type: 'text/plain' })
         })]);
         say('Copied!');
         return;
       } catch (err) { /* some browsers refuse multi-type writes */ }
     }
 
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(written);
     say('Copied!');
   } catch (err) {
     if (err && err.name === 'AbortError') return;   // share sheet dismissed
