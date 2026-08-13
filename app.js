@@ -103,6 +103,7 @@ const state = {
 let cardEls = new Map();   // word -> element
 let rowEls = [];           // { row, label }
 let selected = null;       // index of the tapped card awaiting a partner
+let winTimer = null;       // pending win sheet, held back while we celebrate
 
 /* ---------- dom ---------- */
 
@@ -137,6 +138,7 @@ function startLevel(level, restore) {
   state.elapsed = restore ? restore.elapsed : 0;
   state.done = false;
   selected = null;
+  clearTimeout(winTimer);  /* don't let a previous puzzle's sheet land on this one */
 
   buildDom();
   applyBoard(false);
@@ -575,17 +577,40 @@ function finish() {
   refreshHud();
   save();
   vibrate([20, 60, 30]);
-  setTimeout(() => {
-    openSheet('Puzzle solved! 🎉', `
-      <div class="result-grid">
-        <div><strong>${formatTime(state.elapsed)}</strong>time</div>
-        <div><strong>${state.moves}</strong>moves</div>
-        <div><strong>${HINTS_PER_PUZZLE - state.hints}</strong>hints</div>
-      </div>`, [
-      { label: 'Next puzzle', primary: true, onClick: () => startLevel(state.level + 1) },
-      { label: 'Play this one again', onClick: () => startLevel(state.level) }
-    ]);
-  }, 620);
+  announce('All six groups complete!');
+
+  /* Hold the finished board on screen for a moment — the last row's cards are
+     still popping, and the win sheet would cover the thing just achieved. */
+  const celebrating = !prefersReducedMotion();
+  if (celebrating) celebrate();
+
+  clearTimeout(winTimer);
+  winTimer = setTimeout(showWinSheet, celebrating ? 3200 : 800);
+}
+
+/* Three volleys: corners, then the board itself, then a lighter encore. */
+function celebrate() {
+  const corners = (count, power) => {
+    fireConfetti({ x: 0, y: 1, angle: 62, spread: 55, count, power });
+    fireConfetti({ x: 1, y: 1, angle: 118, spread: 55, count, power });
+  };
+
+  setTimeout(() => corners(55, 17), 220);
+  setTimeout(() => fireConfetti({ x: .5, y: .55, angle: 90, spread: 150, count: 70, power: 12 }), 950);
+  setTimeout(() => corners(35, 15), 1700);
+}
+
+function showWinSheet() {
+  if (!state.done) return;
+  openSheet('Puzzle solved! 🎉', `
+    <div class="result-grid">
+      <div><strong>${formatTime(state.elapsed)}</strong>time</div>
+      <div><strong>${state.moves}</strong>moves</div>
+      <div><strong>${HINTS_PER_PUZZLE - state.hints}</strong>hints</div>
+    </div>`, [
+    { label: 'Next puzzle', primary: true, onClick: () => startLevel(state.level + 1) },
+    { label: 'Play this one again', onClick: () => startLevel(state.level) }
+  ]);
 }
 
 function showHelp() {

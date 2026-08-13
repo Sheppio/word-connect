@@ -13,8 +13,9 @@ directly. No build step, no dependencies, no server needed.
 - **Or tap** one card then tap a second — the same swap, easier on small screens.
 - Complete a row and it locks: the band takes the group's colour and the title
   appears on a banner. Locked cards can't be moved again.
-- Clear all six rows to finish the puzzle. Time, moves and hints used are tallied
-  at the end.
+- Clear all six rows to finish the puzzle. Confetti goes up over the completed
+  board and the scorecard — time, moves, hints used — follows a few seconds
+  later, so the finished grid gets a moment to itself.
 - **Hint** pulls one group into the row it's already closest to (3 per puzzle).
   **Shuffle** re-scatters the unsolved cards. **Restart** returns to the opening
   layout.
@@ -47,6 +48,7 @@ four cards still have to share the width of a phone.
 | --- | --- |
 | `index.html` | Page shell: top bar, board, toolbar, dialog |
 | `app.js` | Game state, drag and drop, row locking, hints, saving |
+| `confetti.js` | Canvas particle burst for the win celebration |
 | `data.js` | The word-set pool |
 | `style.css` | Layout and theme, sized to fit one screen without scrolling |
 
