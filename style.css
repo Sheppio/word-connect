@@ -165,12 +165,14 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   transition: background-color .35s ease;
 }
 
-/* Solved row: coloured band + title banner. The two offset shadows carry the
-   band out to the screen edges without growing it vertically, so the gap
-   between rows survives. */
+/* Solved row: coloured band + title banner. The band reaches 5px past the cards
+   on every side — the negative margin cancels the padding, so the grid columns
+   and therefore the cards keep exactly the size they had unsolved. Stopping
+   short of the screen edge leaves the background showing at either end. */
 .row.solved {
   background: var(--row-color);
-  box-shadow: -10px 0 0 var(--row-color), 10px 0 0 var(--row-color);
+  margin-inline: -5px;
+  padding-inline: 5px;
 }
 
 /* one sheen sweeping the row as it locks — the gradient travels inside its own
