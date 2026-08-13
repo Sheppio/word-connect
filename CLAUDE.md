@@ -27,3 +27,11 @@ opening `index.html` from disk.
 
 The board must fit one screen with no page scrolling, on a phone. Check any
 layout change at 375px wide before shipping.
+
+Every card on a board shares one type size, so the longest word sets the size
+for all twenty-four. Words over `MAX_WORD_LEN` are never dealt — raise that
+constant only after checking what it does to the type size at 375px.
+
+Colours belong to the palette in `ROW_COLORS`: six hues at one saturation and
+lightness. Adding a colour means adding a hue, not a hand-picked hex. Text on
+those colours must clear WCAG AA (4.5:1); `test-polish.mjs` measures it.

@@ -9,16 +9,22 @@ const SLOTS = ROWS * COLS;
 const HINTS_PER_PUZZLE = 3;
 const STORE_KEY = 'word-connect-save-v1';
 
-/* One colour per row-group, in the order the groups were dealt:
-   [band behind the row, face of the locked cards]. */
-const ROW_COLORS = [
-  ['#f5b463', '#ee9b32'],
-  ['#ffe587', '#ffd84f'],
-  ['#8adf9c', '#5ccd77'],
-  ['#9ad7f8', '#6cc0ef'],
-  ['#e0b2f5', '#cd90ec'],
-  ['#ffb3b3', '#fb8c8c']
-];
+/* Six hues at a fixed saturation and lightness, so the set reads as one
+   palette: [band behind the row, face of the locked cards]. */
+const ROW_HUES = [32, 50, 142, 205, 276, 348];
+const ROW_COLORS = ROW_HUES.map(h => [
+  `hsl(${h} 82% 73%)`,
+  `hsl(${h} 74% 61%)`
+]);
+
+/* Longest word we will deal. Every card on a board shares one type size, so a
+   single long word would shrink all twenty-four; over this length a word is
+   simply left in the pool undealt. Spaces are free — "POLE VAULT" wraps. */
+const MAX_WORD_LEN = 8;
+
+function longestToken(word) {
+  return word.split(' ').reduce((n, part) => Math.max(n, part.length), 0);
+}
 
 /* ---------- deterministic randomness ---------- */
 
@@ -50,7 +56,8 @@ function exclusiveWords(catIdx, idxs) {
   idxs.forEach(other => {
     if (other !== catIdx) CATEGORIES[other].words.forEach(w => rivals.add(w));
   });
-  return CATEGORIES[catIdx].words.filter(w => !rivals.has(w));
+  return CATEGORIES[catIdx].words.filter(
+    w => !rivals.has(w) && longestToken(w) <= MAX_WORD_LEN);
 }
 
 /* Six categories that can each still field four unambiguous words, then four
@@ -152,9 +159,23 @@ function startLevel(level, restore) {
 
   buildDom();
   applyBoard(false);
+  fitAllText();
   for (let r = 0; r < ROWS; r++) if (state.locked[r] >= 0) paintRow(r, false);
   refreshHud();
+  dealIn();
   save();
+}
+
+/* Cards drop onto the board in reading order rather than simply appearing. */
+function dealIn() {
+  if (prefersReducedMotion()) return;
+  for (let i = 0; i < SLOTS; i++) {
+    const el = cardEls.get(state.board[i].word);
+    el.animate(
+      [{ transform: 'translateY(14px) scale(.9)', opacity: 0 }, { transform: 'none', opacity: 1 }],
+      { duration: 320, delay: i * 11, easing: 'cubic-bezier(.2,.9,.3,1.05)', fill: 'backwards' }
+    );
+  }
 }
 
 function buildDom() {
@@ -223,12 +244,11 @@ function applyBoard(animate) {
       if (!dx && !dy) return;
       el.animate(
         [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
-        { duration: 230, easing: 'cubic-bezier(.2,.85,.3,1)' }
+        { duration: 300, easing: 'cubic-bezier(.34,1.32,.44,1)' }  /* settles with a nudge */
       );
     });
   }
 
-  fitAllText();
   updateAria();
 }
 
@@ -251,18 +271,35 @@ function updateAria() {
   }
 }
 
-/* Shrink the label until it fits its card. */
+/* One type size for the whole board: the largest at which every card fits.
+   Varying sizes card to card read as an accident, so the board shares a size
+   and only a card that still overflows at the floor is shrunk on its own.
+   Geometry doesn't change when cards swap, so this runs per deal, not per move. */
+const MIN_SHARED_SIZE = 11;
+
 function fitAllText() {
-  cardEls.forEach(el => {
-    const text = el.firstChild;
-    const maxW = el.clientWidth - 6;
-    const maxH = el.clientHeight - 4;
-    if (maxW <= 0 || maxH <= 0) return;
-    let size = Math.min(20, Math.round(maxH * 0.42));
-    text.style.fontSize = size + 'px';
-    while (size > 7 && (text.scrollWidth > maxW || text.scrollHeight > maxH)) {
-      size -= 0.5;
-      text.style.fontSize = size + 'px';
+  const els = [...cardEls.values()].filter(el => el.isConnected && el.clientWidth > 0);
+  if (!els.length) return;
+
+  const texts = els.map(el => el.firstChild);
+  const room = els.map(el => ({ w: el.clientWidth - 6, h: el.clientHeight - 4 }));
+  const setAll = size => texts.forEach(t => { t.style.fontSize = size + 'px'; });
+  const overflows = i => texts[i].scrollWidth > room[i].w || texts[i].scrollHeight > room[i].h;
+  const anyOverflow = () => texts.some((_, i) => overflows(i));
+
+  let size = Math.min(21, Math.round(room[0].h * 0.44));
+  setAll(size);
+  while (size > MIN_SHARED_SIZE && anyOverflow()) {
+    size -= 0.5;
+    setAll(size);
+  }
+
+  /* a word too long even at the floor gets shrunk by itself */
+  texts.forEach((text, i) => {
+    let own = size;
+    while (own > 7 && overflows(i)) {
+      own -= 0.5;
+      text.style.fontSize = own + 'px';
     }
   });
 }
@@ -382,10 +419,14 @@ function onPointerDown(e) {
     el,
     startX: e.clientX,
     startY: e.clientY,
+    lastX: e.clientX,
+    lastT: performance.now(),
+    tilt: 0,
     moved: false,
     ghost: null,
     target: null
   };
+  el.classList.add('pressed');
 
   window.addEventListener('pointermove', onPointerMove, { passive: false });
   window.addEventListener('pointerup', onPointerUp);
@@ -400,6 +441,7 @@ function onPointerMove(e) {
   if (!drag.moved) {
     if (Math.hypot(dx, dy) < 8) return;
     drag.moved = true;
+    drag.el.classList.remove('pressed');
     beginGhost(e.clientX, e.clientY);
     setSelected(null);
   }
@@ -430,8 +472,16 @@ function beginGhost(x, y) {
 }
 
 function moveGhost(x, y) {
+  /* lean into the direction of travel, eased so it doesn't jitter */
+  const now = performance.now();
+  const speed = (x - drag.lastX) / Math.max(now - drag.lastT, 8) * 16;
+  drag.lastX = x;
+  drag.lastT = now;
+  drag.tilt += (Math.max(-8, Math.min(8, speed * 0.9)) - drag.tilt) * 0.25;
+
   drag.ghost.style.transform =
-    `translate(${x - drag.offsetX - drag.baseX}px, ${y - drag.offsetY - drag.baseY}px) scale(1.1)`;
+    `translate(${x - drag.offsetX - drag.baseX}px, ${y - drag.offsetY - drag.baseY}px)` +
+    ` rotate(${drag.tilt.toFixed(2)}deg) scale(1.1)`;
 }
 
 function highlightTarget(x, y) {
@@ -454,6 +504,7 @@ function onPointerUp(e) {
 
   const d = drag;
   drag = null;
+  d.el.classList.remove('pressed');
 
   if (!d.moved) { tapCard(d.index); return; }
 
@@ -521,12 +572,30 @@ let timerId = null;
 
 function refreshHud() {
   document.getElementById('level-num').textContent = String(state.level);
-  document.getElementById('solved-count').textContent =
-    String(state.locked.filter(g => g >= 0).length);
+  updatePips();
   document.getElementById('moves').textContent = String(state.moves);
   document.getElementById('hint-count').textContent = String(state.hints);
   document.getElementById('btn-hint').disabled = state.hints <= 0 || state.done;
   document.getElementById('timer').textContent = formatTime(state.elapsed);
+}
+
+/* One pip per group, lit in that group's colour once its row locks. */
+function updatePips() {
+  const pips = document.querySelectorAll('#pips .pip');
+  let solved = 0;
+  pips.forEach((pip, g) => {
+    const done = state.locked.includes(g);
+    const group = state.groups[g];
+    if (done && group) {
+      pip.style.setProperty('--pip-color', group.cardColor);
+      pip.classList.add('filled');
+      solved++;
+    } else {
+      pip.classList.remove('filled');
+    }
+  });
+  document.getElementById('pips')
+    .setAttribute('aria-label', `${solved} of ${ROWS} groups solved`);
 }
 
 function formatTime(s) {
@@ -614,12 +683,15 @@ function celebrate() {
 
 function showWinSheet() {
   if (!state.done) return;
+  const found = state.groups.map(g =>
+    `<li><span class="chip" style="background:${g.cardColor}"></span>${g.title}</li>`).join('');
   openSheet('Puzzle solved! 🎉', `
     <div class="result-grid">
       <div><strong>${formatTime(state.elapsed)}</strong>time</div>
       <div><strong>${state.moves}</strong>moves</div>
       <div><strong>${HINTS_PER_PUZZLE - state.hints}</strong>hints</div>
-    </div>`, [
+    </div>
+    <ul class="solved-list">${found}</ul>`, [
     { label: 'Next puzzle', primary: true, onClick: () => startLevel(state.level + 1) },
     { label: 'Play this one again', onClick: () => startLevel(state.level) }
   ]);

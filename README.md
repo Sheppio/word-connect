@@ -46,9 +46,11 @@ To add material, extend a pool or append a category:
 { title: 'Sea Creatures', words: ['DOLPHIN', 'OCTOPUS', 'SHARK', 'CRAB', 'WHALE'] }
 ```
 
-At least four words per category, and keep them to about ten characters — long
-words shrink to fit, but four cards still share the width of a phone. Two short
-words with a space between them (`HOT DOG`) wrap and are fine.
+At least four words per category. **Words longer than eight characters are never
+dealt** (`MAX_WORD_LEN` in `app.js`) — every card on a board shares one type
+size, so a single long word would shrink all twenty-four. Over-length words can
+stay in the pool; they simply sit out. Spaces are free, since the card wraps:
+`POLE VAULT` is measured as its longest word, five characters.
 
 ## Files
 
