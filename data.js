@@ -122,7 +122,7 @@ const CATEGORIES = [
 
   { title: 'Vegetables', words: [
     'CARROT', 'ONION', 'SPINACH', 'LEEK', 'POTATO', 'CABBAGE', 'BROCCOLI',
-    'CELERY', 'PARSNIP', 'TURNIP', 'PUMPKIN', 'COURGETTE', 'RADISH', 'OLIVE',
+    'CELERY', 'PARSNIP', 'TURNIP', 'PUMPKIN', 'COURGETTE', 'RADISH',
     'PEPPER', 'SPROUT', 'BEETROOT'] },
 
   { title: 'Nuts', words: [
