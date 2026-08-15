@@ -291,5 +291,8 @@ Three rules the shell relies on:
   the streak, celebrates and shows the scorecard.
 - **Keep your working data on `state`**, under keys named in your file's header.
   One object means one save path, whatever is being played.
+- **Size anything you draw from the board's width, and test the widest case.**
+  `fitAllText()`, `anaFit()` and `chFit()` all shrink one shared size until the
+  longest item fits, so a board reads as a set rather than as an accident.
 
 Add the id to `MODE_ORDER` too — that's the order the home screen lists them in.

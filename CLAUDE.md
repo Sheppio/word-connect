@@ -46,8 +46,15 @@ with a line of state each and shows the streak. `#app` holds the board and is
 hidden while home is showing, so anything that runs on a timer — the clock, the
 win sheet, the confetti — has to stop when `showHome()` is called.
 
-The board must fit one screen with no page scrolling, on a phone. Check any
-layout change at 375px wide before shipping.
+The board must fit one screen, in both directions, with no page scrolling, on a
+phone. Check any layout change at 375px wide before shipping — and check the
+*widest* content a mode can deal, not just the first puzzle it happens to
+deal: the anagram's tiles only ran off the screen on a seven-letter word.
+
+`.board` carries `min-width: 0` for the same reason it carries `min-height: 0`.
+Without it a flex item refuses to shrink below its content, so oversized tiles
+widen the board rather than overflowing it — and a mode that sizes its tiles
+from the board's width then measures the widened board and keeps them oversized.
 
 Every card on a board shares one type size, so the longest word sets the size
 for all twenty-four. Words over `MAX_WORD_LEN` are never dealt — raise that

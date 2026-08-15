@@ -144,12 +144,18 @@ function drawAnagram(fresh) {
 }
 
 /* Tiles and slots share a size, worked out from how many have to fit the width
-   rather than fixed in CSS — a four-letter word gets bigger tiles than a seven. */
+   rather than fixed in CSS — a four-letter word gets bigger tiles than a seven.
+
+   The row is never usefully wider than the window, and measuring as if it were
+   is how seven tiles once ran off the side of a phone: a board that had already
+   been widened by its own oversized tiles reported the width it had been pushed
+   to, which sized the next word's tiles to overflow again. */
 function anaFit(count) {
   const row = boardEl.querySelector('.tile-row');
   if (!row) return;
   const gap = 6;
-  const size = Math.min(64, Math.floor((row.clientWidth - gap * (count - 1)) / count));
+  const room = Math.min(row.clientWidth, window.innerWidth);
+  const size = Math.max(24, Math.min(64, Math.floor((room - gap * (count - 1)) / count)));
   boardEl.style.setProperty('--tile-size', size + 'px');
   boardEl.style.setProperty('--tile-font', Math.round(size * 0.52) + 'px');
 }

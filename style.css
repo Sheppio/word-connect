@@ -175,10 +175,17 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   display: flex;
 }
 
-/* Every mode fills the same space; each lays it out its own way. */
+/* Every mode fills the same space; each lays it out its own way.
+
+   min-width matters as much as min-height: a flex item defaults to refusing to
+   shrink below its content, so a row of tiles too wide for the phone would
+   widen the board instead of overflowing it — and a mode that sizes its tiles
+   from the board's width would then measure the widened board and keep them
+   too big. Zero here makes the board the screen's width, always. */
 .board {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -748,7 +755,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   border-radius: 11px;
   border: none;
   font-family: inherit;
-  font-size: 19px;
+  /* set by chFit(); min-width lets a track stay its share of the row rather
+     than being pushed wider by a piece that doesn't fit */
+  font-size: var(--chunk-font, 19px);
+  min-width: 0;
+  overflow: hidden;
   font-weight: 800;
   letter-spacing: .02em;
   background: linear-gradient(180deg, #ffffff 0%, #eaeefb 100%);

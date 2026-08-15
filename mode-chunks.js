@@ -249,10 +249,30 @@ function drawChunks(fresh) {
   });
   play.appendChild(pool);
 
+  chFit();
+
   if (fresh && !prefersReducedMotion()) {
     [...pool.children].forEach((el, i) => el.animate(
       [{ transform: 'translateY(12px) scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }],
       { duration: 260, delay: i * 30, easing: 'cubic-bezier(.2,.9,.3,1.05)', fill: 'backwards' }));
+  }
+}
+
+/* One size for every piece, the longest deciding it — the same rule the grid
+   uses for its cards. Four columns of a five-letter piece don't fit a 320px
+   phone at the full size, and pieces that each shrank to their own text would
+   read as an accident rather than a set. */
+function chFit() {
+  const tiles = [...boardEl.querySelectorAll('.chunk-pool .chunk')];
+  if (!tiles.length) return;
+  const set = size => boardEl.style.setProperty('--chunk-font', size + 'px');
+  const fits = () => tiles.every(t => t.scrollWidth <= t.clientWidth);
+
+  let size = 19;
+  set(size);
+  while (size > 12 && !fits()) {
+    size -= 0.5;
+    set(size);
   }
 }
 
@@ -344,7 +364,7 @@ const CHUNKS_MODE = {
   ],
 
   start: chStart,
-  fit: null,
+  fit: chFit,
   hint: chHint,
   shuffle: chShuffle,
   serialize: () => ({ solved: state.chSolved }),
