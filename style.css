@@ -175,12 +175,18 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   display: flex;
 }
 
+/* Every mode fills the same space; each lays it out its own way. */
 .board {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.board.mode-grid {
   display: grid;
   grid-template-rows: repeat(6, 1fr);
   gap: var(--row-gap);
-  min-height: 0;
   /* headroom so the top row's banner has somewhere to sit */
   padding-top: 32px;
 }
@@ -582,4 +588,223 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 @media (min-width: 520px) {
   :root { --row-gap: 18px; --card-gap: 9px; }
   #app { padding-left: 14px; padding-right: 14px; }
+}
+
+/* ---------- shared furniture for the quiz-shaped modes ----------
+
+   The row colours are set on :root from ROW_HUES at startup (see app.js), so
+   nothing here hand-picks a colour: --row-2-card is the palette's green,
+   --row-5-card its red. */
+
+.quiz-head {
+  flex: none;
+  text-align: center;
+  padding: 4px 0 12px;
+}
+.quiz-count {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  opacity: .5;
+}
+.quiz-ask {
+  display: block;
+  margin-top: 3px;
+  min-height: 21px;
+  font-size: 15.5px;
+  font-weight: 700;
+  opacity: .92;
+}
+
+/* ---------- odd one out ---------- */
+
+.quiz-list {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+  min-height: 0;
+  padding-bottom: 4px;
+}
+.quiz-card {
+  width: 100%;
+  cursor: pointer;
+  transition: background-color .25s ease, opacity .25s ease, transform .15s ease;
+}
+.quiz-card:disabled { cursor: default; }
+.quiz-card:active:not(:disabled) { transform: scale(.985); }
+
+.quiz-card.wrong { background: var(--row-5-card); }
+.quiz-card.right { background: var(--row-2-card); }
+.quiz-card.family { opacity: .55; }
+.quiz-card.ruled-out { opacity: .3; }
+
+/* ---------- anagram ---------- */
+
+.ana-done {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-height: 22px;
+}
+
+/* the part you actually touch, centred in whatever the head leaves behind */
+.play {
+  margin: auto 0;
+  width: 100%;
+}
+.ana-done li {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .13);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.tile-row {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.tile-row.rack { margin-bottom: 6px; }
+
+.tile {
+  width: var(--tile-size, 46px);
+  height: var(--tile-size, 46px);
+  border-radius: 11px;
+  border: none;
+  font-family: inherit;
+  font-size: var(--tile-font, 24px);
+  font-weight: 800;
+  background: linear-gradient(180deg, #ffffff 0%, #eaeefb 100%);
+  color: var(--card-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .95),
+    0 3px 0 var(--card-edge),
+    0 4px 7px rgba(0, 0, 0, .3);
+  cursor: pointer;
+  transition: background-color .25s ease, opacity .2s ease, transform .12s ease;
+}
+.tile:active:not(:disabled) { transform: scale(.94); }
+.tile.spent { opacity: 0; pointer-events: none; }
+.tile.slot.empty {
+  background: none;
+  box-shadow: none;
+  border: 2px dashed rgba(255, 255, 255, .3);
+}
+.tile.fixed { background: var(--row-1-card); }
+.slots.right .tile { background: var(--row-2-card); }
+
+.slots.shake { animation: shake .38s ease; }
+@keyframes shake {
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-3px); }
+}
+
+/* ---------- chunks ---------- */
+
+.chunk-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  margin: 0 0 16px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 2px dashed rgba(255, 255, 255, .26);
+  background: rgba(255, 255, 255, .07);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .45);
+  transition: border-color .25s ease, background-color .25s ease;
+}
+.chunk-bar.dead {
+  border-color: var(--row-5-card);
+  background: rgba(255, 255, 255, .04);
+}
+
+.chunk-pool {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-bottom: 4px;
+}
+.chunk {
+  padding: 13px 4px;
+  border-radius: 11px;
+  border: none;
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  background: linear-gradient(180deg, #ffffff 0%, #eaeefb 100%);
+  color: var(--card-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .95),
+    0 3px 0 var(--card-edge),
+    0 4px 7px rgba(0, 0, 0, .3);
+  cursor: pointer;
+  transition: opacity .2s ease, transform .12s ease;
+}
+.chunk:active:not(:disabled) { transform: scale(.95); }
+.chunk.spent { opacity: 0; pointer-events: none; }
+.chunk.taken { opacity: .22; }
+.chunk.in-bar { padding: 11px 12px; }
+
+/* ---------- the game picker ---------- */
+
+.mode-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+.mode-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, .09);
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.mode-card.current {
+  border-color: rgba(255, 255, 255, .45);
+  background: rgba(255, 255, 255, .17);
+}
+.mode-card:active { transform: scale(.99); }
+.mode-icon {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  flex: none;
+}
+.mode-text {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.35;
+  opacity: .72;
+}
+.mode-text strong {
+  display: block;
+  font-size: 15.5px;
+  opacity: 1;
 }

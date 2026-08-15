@@ -31,7 +31,7 @@
     <div class="stats">
       <span id="timer">0:00</span>
       <span class="dim" aria-hidden="true">·</span>
-      <span id="moves">0</span><span class="dim wordy"> moves</span>
+      <span id="moves">0</span><span class="dim wordy" id="moves-label"> moves</span>
     </div>
 
     <div class="bar-side bar-right">
@@ -46,7 +46,7 @@
   </header>
 
   <main class="board-wrap">
-    <div id="board" class="board" role="grid" aria-label="Word grid: six rows of four cards"></div>
+    <div id="board" class="board"></div>
   </main>
 
   <footer class="toolbar">
@@ -93,6 +93,11 @@
 <script src="data.js"></script>
 <script src="confetti.js"></script>
 <script src="share-card.js"></script>
+<!-- modes register themselves as globals, so they load before the shell -->
+<script src="mode-grid.js"></script>
+<script src="mode-odd.js"></script>
+<script src="mode-anagram.js"></script>
+<script src="mode-chunks.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

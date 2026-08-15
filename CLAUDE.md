@@ -25,6 +25,22 @@ No frameworks, no build step, no external requests: the game is plain HTML, CSS
 and JS served as static files. Keep it that way — anything added has to work by
 opening `index.html` from disk.
 
+## Four games, one shell
+
+`app.js` owns the session — clock, moves, hint stock, streak, saves, dialogs —
+and no game rules whatsoever. Each game lives in its own `mode-*.js` and is
+registered in `MODES` at the foot of `app.js`; the modes load first, which is
+why `app.js` is last in `index.html`. README's "Adding a game" has the shape of
+a mode object.
+
+**A grid seed must keep dealing the puzzle it always dealt.** `seedFor()` leaves
+`20260813-1` alone and gives the other games a name in the middle. Changing how
+the grid picks its categories or words re-deals every puzzle every player has
+already played, so any change there has to be checked against the old output
+first.
+
+Playing one puzzle in any game keeps the day's streak.
+
 The board must fit one screen with no page scrolling, on a phone. Check any
 layout change at 375px wide before shipping.
 
