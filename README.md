@@ -1,7 +1,8 @@
 # Word Connect
 
 Four phone-first word games sharing one pool of words, one clock and one streak.
-Pick a game from the ☰ menu; each deals its own numbered puzzles every day.
+The game opens on a home screen: your streak, and a card for each game saying
+where you are in it. Each deals its own numbered puzzles every day.
 
 | Game | What you do |
 | --- | --- |
@@ -78,6 +79,30 @@ words can't be cut at all and sit the mode out.
 This is also the only mode that deals the pool's longest words: `MAX_WORD_LEN`
 exists because four cards share the width of a phone, and there are only a dozen
 pieces here, so `RINGMASTER` finally gets a game.
+
+## The home screen
+
+Where the game opens, whatever was last played — a puzzle left half finished is
+one tap away and its card says so, rather than dropping you back into a board
+you may be done with for now. Each card carries the game's name, what it asks of
+you, and one line of state:
+
+| Card says | Means |
+| --- | --- |
+| `Puzzle 3 · in progress` | a board with time or moves on it, waiting |
+| `Puzzle 4 · 3 done today` | three finished today, the fourth is open |
+| `Puzzle 1` | nothing played in this game today |
+
+The streak sits above them, spelled out rather than squeezed into the header
+chip, and lights the moment anything is finished today. The `?` beside each card
+reads that game's rules without starting it; the rules also appear once, by
+themselves, the first time you enter a game (`word-connect-seen-v1` remembers
+which games have introduced themselves).
+
+The house button in a game's header returns here. The board's clock stops while
+you're on the home screen, and a celebration in progress is cleared rather than
+followed here — its later volleys are on timers, so `stopCelebrating()` cancels
+those as well as clearing the canvas.
 
 ## Shared between the games
 
@@ -205,7 +230,7 @@ stay in the pool; they simply sit out. Spaces are free, since the card wraps:
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Page shell: top bar, board, toolbar, dialog |
+| `index.html` | Page shell: home screen, top bar, board, toolbar, dialog |
 | — | *scripts load modes first, then `app.js`, which registers them* |
 | `app.js` | The shell: session, clock, hints, streak, saves, dialogs, mode registry |
 | `mode-grid.js` | Word Connect: the grid, drag and drop, row locking, sharing |
@@ -242,8 +267,8 @@ supplies rules and a board; the shell supplies everything else.
 
 ```js
 const MY_MODE = {
-  id: 'mine', name: 'My Game', blurb: 'One line for the menu',
-  tint: 'rgb(126 200 255)',   // the dot beside it in the menu
+  id: 'mine', name: 'My Game', blurb: 'One line for the home card',
+  tint: 'rgb(126 200 255)',   // the dot on its home card
   counter: 'moves',           // what the number in the header counts
   help: ['Shown on the How to play sheet'],
 
@@ -266,3 +291,5 @@ Three rules the shell relies on:
   the streak, celebrates and shows the scorecard.
 - **Keep your working data on `state`**, under keys named in your file's header.
   One object means one save path, whatever is being played.
+
+Add the id to `MODE_ORDER` too — that's the order the home screen lists them in.

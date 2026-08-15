@@ -765,46 +765,149 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .chunk.taken { opacity: .22; }
 .chunk.in-bar { padding: 11px 12px; }
 
-/* ---------- the game picker ---------- */
+/* ---------- home screen ---------- */
 
-.mode-list {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
-  text-align: left;
+.home {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100dvh;
+  padding: calc(var(--safe-t) + 12px) 16px calc(var(--safe-b) + 12px);
+  max-width: 620px;
+  margin: 0 auto;
+  overflow-y: auto;
 }
-.mode-card {
+.home[hidden] { display: none; }
+
+.home-inner { width: 100%; margin: auto 0; }
+
+.home-head { text-align: center; }
+.home-head h1 {
+  margin: 0;
+  font-size: 33px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+.home-sub {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: .6;
+}
+
+/* the streak, spelled out rather than squeezed into a chip */
+.home-streak {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 13px;
-  border-radius: 13px;
-  border: 1px solid transparent;
-  background: rgba(255, 255, 255, .09);
-  color: #fff;
-  font-family: inherit;
-  cursor: pointer;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px 0 22px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-edge);
+  color: rgba(255, 255, 255, .5);
+}
+.home-streak .flame { width: 30px; height: 30px; }
+.home-streak p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
   text-align: left;
 }
-.mode-card.current {
-  border-color: rgba(255, 255, 255, .45);
-  background: rgba(255, 255, 255, .17);
+.home-streak strong {
+  font-size: 21px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
-.mode-card:active { transform: scale(.99); }
-.mode-icon {
-  width: 13px;
-  height: 13px;
-  border-radius: 4px;
+.home-streak-note { font-size: 11.5px; font-weight: 600; opacity: .6; }
+.home-streak.lit { color: #fff; }
+.home-streak.lit .flame-outer { fill: #ff8a2b; }
+.home-streak.lit .flame-core { fill: #ffd257; }
+.home-streak.lit .flame { filter: drop-shadow(0 0 6px rgba(255, 138, 43, .55)); }
+.home-streak.bumped .flame { animation: flare .7s cubic-bezier(.3, 1.4, .5, 1); }
+
+.home-games { display: grid; gap: 9px; }
+
+.game-card { display: flex; align-items: center; gap: 8px; }
+
+.game-play {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 13px 15px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, .13);
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .18s ease, transform .12s ease;
+}
+.game-play:active { transform: scale(.99); background: rgba(255, 255, 255, .16); }
+
+.game-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
   flex: none;
 }
-.mode-text {
+.game-text { display: block; min-width: 0; }
+.game-text strong {
+  display: block;
+  font-size: 16.5px;
+  font-weight: 800;
+}
+.game-blurb {
   display: block;
   font-size: 12.5px;
-  line-height: 1.35;
-  opacity: .72;
+  font-weight: 600;
+  opacity: .62;
+  margin-top: 1px;
 }
-.mode-text strong {
+.game-status {
   display: block;
-  font-size: 15.5px;
-  opacity: 1;
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .45;
+}
+
+.game-help {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--chip-edge);
+  background: var(--chip-bg);
+  color: rgba(255, 255, 255, .6);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.game-help:active { transform: scale(.95); }
+
+.home .version { text-align: center; margin-top: 18px; }
+
+/* short screens: trim the air rather than start scrolling */
+@media (max-height: 640px) {
+  .home { padding-left: 12px; padding-right: 12px; }
+  .home-head h1 { font-size: 26px; }
+  .home-sub { font-size: 12.5px; }
+  .home-streak { margin: 11px 0 12px; padding: 7px 13px; }
+  .home-streak .flame { width: 24px; height: 24px; }
+  .home-games { gap: 7px; }
+  .game-play { padding: 9px 12px; gap: 10px; }
+  .game-text strong { font-size: 15.5px; }
+  .game-blurb { font-size: 11.5px; }
+  .game-status { margin-top: 2px; }
+  .home .version { margin-top: 11px; }
 }

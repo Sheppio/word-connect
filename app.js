@@ -257,6 +257,7 @@ function mode() { return MODES[state.mode] || MODES.grid; }
 /* ---------- dom ---------- */
 
 const appEl = document.getElementById('app');
+const homeEl = document.getElementById('home');
 const boardEl = document.getElementById('board');
 const liveEl = document.getElementById('live');
 const overlayEl = document.getElementById('overlay');
@@ -301,10 +302,12 @@ function startPuzzle(day, level, modeId, restore) {
   watchShuffleCooldown();
 
   clearTimeout(winTimer);  /* don't let a previous puzzle's sheet land on this one */
+  stopCelebrating();
   boardEl.className = 'board mode-' + m.id;
   boardEl.textContent = '';
 
   m.start(restore && restore.game);
+  inPlay = true;
   refreshHud();
   save();
 }
@@ -359,15 +362,27 @@ function finish() {
 }
 
 /* Three volleys: corners, then the board itself, then a lighter encore. */
+let celebrateTimers = [];
+
 function celebrate() {
   const corners = (count, power) => {
     fireConfetti({ x: 0, y: 1, angle: 62, spread: 55, count, power });
     fireConfetti({ x: 1, y: 1, angle: 118, spread: 55, count, power });
   };
 
-  setTimeout(() => corners(55, 17), 220);
-  setTimeout(() => fireConfetti({ x: .5, y: .55, angle: 90, spread: 150, count: 70, power: 12 }), 950);
-  setTimeout(() => corners(35, 15), 1700);
+  celebrateTimers = [
+    setTimeout(() => corners(55, 17), 220),
+    setTimeout(() => fireConfetti({ x: .5, y: .55, angle: 90, spread: 150, count: 70, power: 12 }), 950),
+    setTimeout(() => corners(35, 15), 1700)
+  ];
+}
+
+/* Leaving the board mid-celebration takes the celebration with it — the later
+   volleys are on timers, so clearing the canvas alone would let them refill it. */
+function stopCelebrating() {
+  celebrateTimers.forEach(clearTimeout);
+  celebrateTimers = [];
+  confDestroy();
 }
 
 function showWinSheet() {
@@ -519,16 +534,29 @@ function refreshStreak(bumped) {
   const el = document.getElementById('streak');
   streakShownFor = localDay();
 
+  const label = count === 0
+    ? 'No streak yet — finish a puzzle today to start one'
+    : `${count} day streak, ${todayDone ? 'played today' : 'not played today'}`;
+
   document.getElementById('streak-count').textContent = String(count);
   el.classList.toggle('lit', todayDone);
-  el.setAttribute('aria-label', count === 0
-    ? 'No streak yet — finish a puzzle today to start one'
-    : `${count} day streak, ${todayDone ? 'played today' : 'not played today'}`);
+  el.setAttribute('aria-label', label);
+
+  /* the same streak, spelled out on the home screen */
+  const home = document.getElementById('home-streak');
+  home.classList.toggle('lit', todayDone);
+  home.setAttribute('aria-label', label);
+  document.getElementById('home-streak-count').textContent = String(count);
+  document.getElementById('home-streak-note').textContent =
+    todayDone ? 'played today' :
+      count === 0 ? 'play today to start one' : 'play today to keep it';
 
   if (bumped && !prefersReducedMotion()) {
-    el.classList.remove('bumped');
-    void el.offsetWidth;
-    el.classList.add('bumped');
+    [el, home].forEach(node => {
+      node.classList.remove('bumped');
+      void node.offsetWidth;
+      node.classList.add('bumped');
+    });
   }
 }
 
@@ -548,7 +576,8 @@ function tick() {
   /* midnight rolls the flame back to grey without a reload */
   if (streakShownFor !== localDay()) refreshStreak(false);
 
-  if (state.done || document.hidden) return;
+  /* the clock belongs to the board, not the home screen */
+  if (onHome || state.done || document.hidden) return;
   state.elapsed++;
   document.getElementById('timer').textContent = formatTime(state.elapsed);
   if (state.elapsed % 10 === 0) save();
@@ -716,37 +745,12 @@ function closeSheet() {
   appEl.inert = false;
 }
 
-/* The menu: which game to play, and the rules of the one in play. */
-function showMenu() {
-  const cards = MODE_ORDER.map(id => {
-    const m = MODES[id];
-    const here = id === state.mode ? ' current' : '';
-    return `<button class="mode-card${here}" data-mode="${id}">
-      <span class="mode-icon" style="background:${m.tint}"></span>
-      <span class="mode-text"><strong>${m.name}</strong>${m.blurb}</span>
-    </button>`;
-  }).join('');
-
-  openSheet('Games', `<div class="mode-list">${cards}</div>`,
-    [{ label: 'How to play', onClick: showHelp }, { label: 'Close', primary: true }], true);
-
-  sheetBody.querySelectorAll('.mode-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      closeSheet();
-      if (btn.dataset.mode !== state.mode) switchMode(btn.dataset.mode);
-    });
-  });
-}
-
-function showHelp() {
-  const m = mode();
-  const actions = [{ label: 'Got it', primary: true }];
-  if (state.day !== localDay()) {
-    actions.push({ label: "Today's first puzzle", onClick: () => startPuzzle(localDay(), 1, state.mode) });
-  }
+function showHelp(modeId) {
+  const m = MODES[modeId] || mode();
+  const playing = !onHome && m.id === state.mode;
 
   openSheet(m.name, `
-    <p class="sheet-sub">Puzzle ${state.level} · ${dayLabel(state.day)}</p>
+    ${playing ? `<p class="sheet-sub">Puzzle ${state.level} · ${dayLabel(state.day)}</p>` : ''}
     <ul>
       ${m.help.map(li => `<li>${li}</li>`).join('')}
       <li>Play as many as you like — they unlock in order, so finish one to
@@ -754,14 +758,107 @@ function showHelp() {
           day, so times are worth comparing.</li>
       <li>Finish a puzzle in any game today to keep your streak — the flame
           lights up once you have, and goes out if you miss a day.</li>
-    </ul>`, actions, true);
+    </ul>`, [{ label: 'Got it', primary: true }], true);
+}
+
+/* ---------- home ----------
+
+   The screen the game opens on: the streak, and a card for each game showing
+   where you are in it. The board is a separate screen rather than something
+   behind a dialog, so the clock stops while you're here. */
+
+let onHome = false;
+let inPlay = false;    // a game has been started, so `state` holds a real board
+
+function showHome() {
+  /* keep whatever was on the board — but there's nothing to keep at startup,
+     and saving then would write the empty default over a real save */
+  if (inPlay && !onHome && !state.done) save();
+  onHome = true;
+  inPlay = false;
+  clearTimeout(winTimer);   /* a win sheet must not land on the home screen */
+  stopCelebrating();        /* nor the confetti that was celebrating it */
+  closeSheet();
+  appEl.hidden = true;
+  homeEl.hidden = false;
+  document.getElementById('home-version').textContent = `v${APP_VERSION} · ${APP_BUILD}`;
+  drawHomeGames();
+  refreshStreak(false);
+}
+
+function enterGame(modeId) {
+  if (!MODES[modeId]) return;
+  onHome = false;
+  homeEl.hidden = true;
+  appEl.hidden = false;
+  switchMode(modeId);
+  if (markSeen(modeId)) showHelp(modeId);   // the rules, once, on the first visit
+}
+
+/* Where the player stands in each game today, in one line. */
+function homeStatus(modeId) {
+  const saved = loadSave(modeId);
+  const today = localDay();
+  const solved = highestSolvedToday(modeId);
+  const next = solved + 1;
+
+  const midway = saved && saved.day === today && saved.level >= next &&
+    (saved.elapsed > 0 || saved.moves > 0);
+  if (midway) return `Puzzle ${Math.min(saved.level, next)} · in progress`;
+  if (solved) return `Puzzle ${next} · ${solved} done today`;
+  return `Puzzle ${next}`;
+}
+
+function drawHomeGames() {
+  const list = document.getElementById('home-games');
+  list.textContent = '';
+
+  MODE_ORDER.forEach(id => {
+    const m = MODES[id];
+    const row = document.createElement('div');
+    row.className = 'game-card';
+
+    const play = document.createElement('button');
+    play.type = 'button';
+    play.className = 'game-play';
+    play.dataset.mode = id;
+    play.innerHTML =
+      `<span class="game-dot" style="background:${m.tint}"></span>` +
+      `<span class="game-text"><strong>${m.name}</strong>` +
+      `<span class="game-blurb">${m.blurb}</span>` +
+      `<span class="game-status">${homeStatus(id)}</span></span>`;
+    play.addEventListener('click', () => enterGame(id));
+
+    const help = document.createElement('button');
+    help.type = 'button';
+    help.className = 'game-help';
+    help.textContent = '?';
+    help.setAttribute('aria-label', `How to play ${m.name}`);
+    help.addEventListener('click', () => showHelp(id));
+
+    row.appendChild(play);
+    row.appendChild(help);
+    list.appendChild(row);
+  });
+}
+
+/* Games whose rules have been shown once already. */
+const SEEN_KEY = 'word-connect-seen-v1';
+
+function markSeen(modeId) {
+  let seen = {};
+  try { seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}') || {}; } catch (e) { /* ignore */ }
+  if (seen[modeId]) return false;
+  seen[modeId] = true;
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch (e) { /* ignore */ }
+  return true;
 }
 
 /* ---------- wiring ---------- */
 
 document.getElementById('btn-hint').addEventListener('click', useHint);
 document.getElementById('btn-shuffle').addEventListener('click', doShuffle);
-document.getElementById('btn-menu').addEventListener('click', showMenu);
+document.getElementById('btn-menu').addEventListener('click', showHome);
 document.getElementById('btn-next').addEventListener('click', nextPuzzle);
 
 /* Tapping the backdrop — including the gap around the dialog — dismisses it. */
@@ -790,26 +887,17 @@ const MODE_ORDER = ['grid', 'odd', 'anagram', 'chunks'];
 
 /* ---------- startup ----------
 
-   Yesterday's part-finished board is stale news — a new day starts at its own
-   first puzzle. Within the same day the save is honoured, in whichever mode was
-   last played. */
+   The game opens on the home screen, whatever was last played: every game's
+   card says where it stands, so a puzzle left half finished is one tap away
+   and says so. The hint stock refills on real time, so it's read back before
+   any game starts rather than being any one game's to reset. */
 const savedAll = loadSaves();
 const savedGame = savedAll.modes[savedAll.lastMode] || null;
-
 if (savedGame) {
-  /* the hint stock refills on real time, so it isn't the day's to reset */
   state.hints = Math.min(HINT_MAX, Math.max(0, savedGame.hints | 0));
   state.nextHintAt = savedGame.nextHintAt || 0;
 }
 
-if (savedGame && savedGame.day === localDay() && MODES[savedAll.lastMode]) {
-  /* never resume past what's been unlocked, whatever the save claims */
-  const level = Math.min(savedGame.level, nextUnlocked(savedAll.lastMode));
-  const intact = level === savedGame.level && validSave(savedAll.lastMode, savedGame);
-  startPuzzle(savedGame.day, level, savedAll.lastMode, intact ? savedGame : null);
-} else {
-  startPuzzle(localDay(), 1, 'grid');
-}
-if (!savedGame) showHelp();
+showHome();
 timerId = setInterval(tick, 1000);
 document.fonts && document.fonts.ready.then(() => { const m = mode(); m.fit && m.fit(); });

@@ -331,7 +331,7 @@ function chShuffle() {
 const CHUNKS_MODE = {
   id: 'chunks',
   name: 'Chunks',
-  blurb: 'Rebuild words from their pieces',
+  blurb: 'Rebuild words from pieces',
   tint: 'rgb(220 170 240)',
   counter: 'moves',
   doneMessage: 'All four words rebuilt!',

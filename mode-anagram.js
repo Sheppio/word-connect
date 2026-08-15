@@ -251,7 +251,7 @@ function anaShuffle() {
 const ANAGRAM_MODE = {
   id: 'anagram',
   name: 'Anagram',
-  blurb: 'Unscramble five from one category',
+  blurb: 'Unscramble five words',
   tint: 'rgb(180 220 140)',
   counter: 'wrong',
   doneMessage: 'All five unscrambled!',

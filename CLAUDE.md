@@ -41,6 +41,11 @@ first.
 
 Playing one puzzle in any game keeps the day's streak.
 
+The game opens on the home screen (`#home`), not on a board: it lists the games
+with a line of state each and shows the streak. `#app` holds the board and is
+hidden while home is showing, so anything that runs on a timer — the clock, the
+win sheet, the confetti — has to stop when `showHome()` is called.
+
 The board must fit one screen with no page scrolling, on a phone. Check any
 layout change at 375px wide before shipping.
 

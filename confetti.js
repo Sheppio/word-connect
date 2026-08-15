@@ -34,6 +34,9 @@ function confEnsure() {
 }
 
 function confDestroy() {
+  /* a frame is already queued when this is called mid-flight — it would find
+     the context gone */
+  if (confRaf) cancelAnimationFrame(confRaf);
   window.removeEventListener('resize', confResize);
   if (confCanvas) confCanvas.remove();
   confCanvas = null;
